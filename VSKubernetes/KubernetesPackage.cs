@@ -33,16 +33,18 @@ namespace VSKubernetes
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [Guid(KubernetesPackageGuids.guidPackageString)]
+    [Guid(Constants.guidPackageString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    /*
     [ProjectTypeRegistration(KubernetesPackageGuids.guidProjectString, "aaa", "bbb", "k8sproj", "Yaml", KubernetesPackageGuids.guidPackageString, PossibleProjectExtensions = "k8sproj")]
-    public sealed class K8sCommandPackage : Package
+    */
+    public sealed class KubernetesPackage : Package
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="K8sCommand"/> class.
+        /// Initializes a new instance of the <see cref="KubernetesCommand"/> class.
         /// </summary>
-        public K8sCommandPackage()
+        public KubernetesPackage()
         {
             // Inside this method you can place any initialization code that does not require
             // any Visual Studio service because at this point the package object is created but
@@ -58,7 +60,7 @@ namespace VSKubernetes
         /// </summary>
         protected override void Initialize()
         {
-            K8sCommand.Initialize(this);
+            KubernetesCommand.Initialize(this);
             base.Initialize();
             //this.RegisterProjectFactory(new KubernetesProjectFactory(this));
         }

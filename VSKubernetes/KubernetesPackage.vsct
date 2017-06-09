@@ -89,5 +89,6 @@
     <GuidSymbol name="guidImages" value="{83fc7137-67a0-47b5-81a3-398b39c4ffca}" >
       <IDSymbol name="bmpPic1" value="1" />
     </GuidSymbol>
+
   </Symbols>
 </CommandTable>

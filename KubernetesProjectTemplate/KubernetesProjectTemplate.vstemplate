@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" xmlns:sdk="http://schemas.microsoft.com/developer/vstemplate-sdkextension/2010">
   <TemplateData>
-    <Name>Kubernetes for Visual Studio 2017</Name>
-    <Description>Blah</Description>
-    <Icon>KubernetesProject.ico</Icon>
-    <ProjectType>Yaml</ProjectType>
+    <Name Package="{6f5f21e1-9361-4723-95a9-6e01ddf5c4bc}" ID="110" />
+    <Description Package="{6f5f21e1-9361-4723-95a9-6e01ddf5c4bc}" ID="112" />
+    <Icon Package="{6f5f21e1-9361-4723-95a9-6e01ddf5c4bc}" ID="400" />
     <RequiredFrameworkVersion>2.0</RequiredFrameworkVersion>
-    <SortOrder>1000</SortOrder>
-    <TemplateID>5c98b062-6357-44e8-93af-c53107bdca3b</TemplateID>
+    <ProjectType>Kubernetes</ProjectType>
+    <SortOrder>1</SortOrder>
+    <TemplateID>{5c98b062-6357-44e8-93af-c53107bdca3b}</TemplateID>
     <CreateNewFolder>false</CreateNewFolder>
     <DefaultName>Kubernetes</DefaultName>
     <ProvideDefaultName>true</ProvideDefaultName>
   </TemplateData>
   <TemplateContent>
     <Project File="KubernetesProject.k8sproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true">application.yaml</ProjectItem>
+      <ProjectItem ReplaceParameters="true" OpenInEditor="true">application.yaml</ProjectItem>
     </Project>
   </TemplateContent>
 </VSTemplate>

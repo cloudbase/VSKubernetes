@@ -12,6 +12,7 @@
     <PropertyPageSchema Include="c:\dev\None.xaml">
       <Context>File;BrowseObject</Context>
     </PropertyPageSchema>
+    <ProjectCapability Include="Kubernetes"/>
 
   </ItemGroup>
   <ItemGroup>

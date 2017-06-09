@@ -6,6 +6,7 @@
     <Description xml:space="preserve">Kubernetes for Visual Studio 2017</Description>
     <MoreInfo>https://cloudbase.it</MoreInfo>
     <License>LICENSE.txt</License>
+    <Icon>Resources\KubernetesPackage.ico</Icon>
     <Tags>kubernetes</Tags>
   </Metadata>
   <Installation>
@@ -25,5 +26,7 @@
   </Prerequisites>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|"/>
+    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="KubernetesProjectTemplate" d:TargetPath="|KubernetesProjectTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
   </Assets>
 </PackageManifest>

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file defines icon ID's and which image files they correspond to. This file is used in
+ conjunction with the CustomMoniker.vsct file to provide the necessary data to display your
+ custom moniker in menu buttons, toolbars, etc.
+-->
+<ImageManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/VisualStudio/ImageManifestSchema/2014">
+  <Symbols>
+    <String Name="Resources" Value="/VSKubernetes;Component/Resources" />
+    <Guid Name="KubernetesProjectMonikerGuid" Value="c558abb7-ab5b-4430-ad5b-8218debf95f5" />
+    <ID Name="KubernetesProject" Value="0" />
+  </Symbols>
+  <Images>
+    <Image Guid="$(KubernetesProjectMonikerGuid)" ID="$(KubernetesProject)">
+      <!--
+      <Source Uri="$(Resources)/kubernetes.xaml" />
+      -->
+      <Source Uri="$(Resources)/kubernetes.png">
+        <Size Value="16" />
+      </Source>
+    </Image>
+  </Images>
+  <ImageLists />
+</ImageManifest>

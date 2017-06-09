@@ -17,7 +17,7 @@ namespace VSKubernetes
     /// <summary>
     /// Command handler
     /// </summary>
-    internal sealed class K8sCommand
+    internal sealed class KubernetesCommand
     {
         /// <summary>
         /// Command ID.
@@ -41,11 +41,11 @@ namespace VSKubernetes
         private readonly Package package;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="K8sCommand"/> class.
+        /// Initializes a new instance of the <see cref="KubernetesCommand"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        private K8sCommand(Package package)
+        private KubernetesCommand(Package package)
         {
             if (package == null)
             {
@@ -57,7 +57,7 @@ namespace VSKubernetes
             OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (commandService != null)
             {
-                var menuCommandID = new CommandID(KubernetesPackageGuids.guidCommandSet, CommandId);
+                var menuCommandID = new CommandID(Constants.guidCommandSet, CommandId);
                 var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(OnBeforeQueryStatus);
                 commandService.AddCommand(menuItem);
@@ -112,7 +112,7 @@ namespace VSKubernetes
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
-        public static K8sCommand Instance
+        public static KubernetesCommand Instance
         {
             get;
             private set;
@@ -135,7 +135,7 @@ namespace VSKubernetes
         /// <param name="package">Owner package, not null.</param>
         public static void Initialize(Package package)
         {
-            Instance = new K8sCommand(package);
+            Instance = new KubernetesCommand(package);
         }
 
         private void CreateProjectFromTemplate(Solution4 solution, string templateName, string language, string projectName, bool createProjectDir=true)
@@ -148,7 +148,7 @@ namespace VSKubernetes
             if (!projectDir.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
                 projectDir += System.IO.Path.DirectorySeparatorChar;
 
-            var template = GetVSExtensionFilePath("ProjectTemplates\\KubernetesProject\\KubernetesProject.vstemplate");
+            var template = GetVSExtensionFilePath("ProjectTemplates\\Kubernetes\\1033\\KubernetesProjectTemplate\\KubernetesProjectTemplate.vstemplate");
 
             //var template = solution.GetProjectTemplate(templateName, language);
             solution.AddFromTemplate(template, projectDir, projectName, false);
@@ -187,7 +187,7 @@ namespace VSKubernetes
                 var solution = service.Solution;
                 if(!projectExists(solution, kubernetesProjectName))
                     //CreateProject((Solution4)solution, kubernetesProjectName, false);
-                    CreateProjectFromTemplate((Solution4)solution, "ConsoleApplication.zip", "Yaml", kubernetesProjectName, true);
+                    CreateProjectFromTemplate((Solution4)solution, "KubernetesProjectTemplate.zip", "Yaml", kubernetesProjectName, true);
             }
             catch (Exception ex)
             {
