@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions
+    xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <ContentType
+        Name="Text"
+        DisplayName="Text file"
+        ItemType="None">
+    </ContentType>
+
+    <ContentType
+        Name="Yaml"
+        DisplayName="Kubernetes manifest file"
+        ItemType="None">
+    </ContentType>
+
+    <ItemType Name="None" DisplayName="Does not participate in build"/>
+
+    <FileExtension Name=".txt" ContentType="Text"/>
+    <FileExtension Name=".yaml" ContentType="Yaml"/>
+    <FileExtension Name=".yml" ContentType="Yaml"/>
+</ProjectSchemaDefinitions>
