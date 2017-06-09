@@ -6,7 +6,6 @@
 
 using System;
 using System.ComponentModel.Design;
-using System.Globalization;
 using EnvDTE;
 using EnvDTE100;
 using Microsoft.VisualStudio;
@@ -25,18 +24,16 @@ namespace VSKubernetes
         /// </summary>
         public const int CommandId = 0x0100;
 
-        /// <summary>
-        /// Command menu group (command set GUID).
-        /// </summary>
-        public static readonly Guid CommandSet = new Guid("1ebe970b-154e-45ac-b92e-9083d5b0c87b");
-
+        /*
         public static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
         public static readonly Guid projectTypeCSharp = new Guid("FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
         public static readonly Guid projectTypeVBNet = new Guid("F184B08F-C81C-45F6-A57F-5ABD9991F28F");
         public static readonly Guid projectTypeVCpp = new Guid("8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942");
         public static readonly Guid projectTypeDockerCompose = new Guid("E53339B2-1760-4266-BCC7-CA923CBCF16C");
+        */
 
         public const string dockerFileName = "Dockerfile";
+        public const string kubernetesProjectName = "Kubernetes";
 
         /// <summary>
         /// VS Package that provides this command, not null.
@@ -60,7 +57,7 @@ namespace VSKubernetes
             OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (commandService != null)
             {
-                var menuCommandID = new CommandID(CommandSet, CommandId);
+                var menuCommandID = new CommandID(KubernetesPackageGuids.guidCommandSet, CommandId);
                 var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(OnBeforeQueryStatus);
                 commandService.AddCommand(menuItem);
@@ -96,7 +93,7 @@ namespace VSKubernetes
             foreach (ProjectItem p in project.ProjectItems)
                 if (p.Name == dockerFileName && VSConstants.GUID_ItemType_PhysicalFile == new Guid(p.Kind))
                     return true;
-            return false;           
+            return false;
         }
 
         private void OnBeforeQueryStatus(object sender, EventArgs e)
@@ -141,26 +138,69 @@ namespace VSKubernetes
             Instance = new K8sCommand(package);
         }
 
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
+        private void CreateProjectFromTemplate(Solution4 solution, string templateName, string language, string projectName, bool createProjectDir=true)
+        {
+            var solutionDir = System.IO.Path.GetDirectoryName(solution.FileName);
+
+            var projectDir = solutionDir;
+            if (createProjectDir)
+                projectDir = System.IO.Path.Combine(solutionDir, projectName);
+            if (!projectDir.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+                projectDir += System.IO.Path.DirectorySeparatorChar;
+
+            var template = GetVSExtensionFilePath("ProjectTemplates\\KubernetesProject\\KubernetesProject.vstemplate");
+
+            //var template = solution.GetProjectTemplate(templateName, language);
+            solution.AddFromTemplate(template, projectDir, projectName, false);
+        }
+
+        private string GetVSExtensionFilePath(string relPath)
+        {
+            var extensionPath = new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath;
+            var extensionDir = System.IO.Path.GetDirectoryName(extensionPath);
+            return System.IO.Path.Combine(extensionDir, relPath);
+        }
+
+        private void CreateProject(Solution4 solution, string projectName, bool createProjectDir = true)
+        {
+            var solutionDir = System.IO.Path.GetDirectoryName(solution.FileName);
+
+            var projectTemplatePath = GetVSExtensionFilePath("Templates\\Projects\\KubernetesProject\\KubernetesProject.k8sproj");
+            var projectFilePath = System.IO.Path.Combine(solutionDir, projectName + ".k8sproj");
+            System.IO.File.Copy(projectTemplatePath, projectFilePath, true);
+            solution.AddFromFile(projectFilePath, false);
+        }
+
+        private bool projectExists(Solution solution, string projectName)
+        {
+            foreach (Project p in solution.Projects)
+                if (p.Name == kubernetesProjectName)
+                    return true;
+            return false;
+        }
+
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
-            string title = "K8sCommand";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.ServiceProvider,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            try
+            {
+                DTE service = (DTE)this.ServiceProvider.GetService(typeof(DTE));
+                var solution = service.Solution;
+                if(!projectExists(solution, kubernetesProjectName))
+                    //CreateProject((Solution4)solution, kubernetesProjectName, false);
+                    CreateProjectFromTemplate((Solution4)solution, "ConsoleApplication.zip", "Yaml", kubernetesProjectName, true);
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                string title = "Kubernetes for Visual Studio";
+                VsShellUtilities.ShowMessageBox(
+                    this.ServiceProvider,
+                    message,
+                    title,
+                    OLEMSGICON.OLEMSGICON_WARNING,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            }
         }
     }
 }

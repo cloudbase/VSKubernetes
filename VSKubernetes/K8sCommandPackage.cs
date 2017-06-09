@@ -5,16 +5,11 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
+using Microsoft.VisualStudio.ProjectSystem.VS;
 
 namespace VSKubernetes
 {
@@ -38,16 +33,12 @@ namespace VSKubernetes
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [Guid(K8sCommandPackage.PackageGuidString)]
+    [Guid(KubernetesPackageGuids.guidPackageString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideAutoLoad("f1536ef8-92ec-443c-9ed7-fdadf150da82")]
+    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProjectTypeRegistration(KubernetesPackageGuids.guidProjectString, "aaa", "bbb", "k8sproj", "Yaml", KubernetesPackageGuids.guidPackageString, PossibleProjectExtensions = "k8sproj")]
     public sealed class K8sCommandPackage : Package
     {
-        /// <summary>
-        /// K8sCommandPackage GUID string.
-        /// </summary>
-        public const string PackageGuidString = "6f5f21e1-9361-4723-95a9-6e01ddf5c4bc";
-
         /// <summary>
         /// Initializes a new instance of the <see cref="K8sCommand"/> class.
         /// </summary>
@@ -69,6 +60,7 @@ namespace VSKubernetes
         {
             K8sCommand.Initialize(this);
             base.Initialize();
+            //this.RegisterProjectFactory(new KubernetesProjectFactory(this));
         }
 
         #endregion

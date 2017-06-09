@@ -41,7 +41,7 @@
         <!-- IDM_VS_CTXT_PROJNODE -->
       </Group>
     </Groups>
-    
+
 
     <!--Buttons section. -->
     <!--This section defines the elements the user can interact with, like a menu command or a button
@@ -58,7 +58,7 @@
         <Parent guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup" />
         <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
-        <CommandFlag>DynamicVisibility</CommandFlag>        
+        <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
           <ButtonText>Kubernetes Support</ButtonText>
         </Strings>
