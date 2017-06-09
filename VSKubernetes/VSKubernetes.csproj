@@ -81,7 +81,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="index.html" />
     <Content Include="ProjectTemplates\KubernetesProject\KubernetesProject.ico">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -92,7 +91,6 @@
     <Content Include="Resources\K8sCommand.png" />
     <Content Include="Resources\K8sCommandPackage.ico" />
     <Content Include="Resources\kubernetes.png" />
-    <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
