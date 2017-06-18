@@ -267,7 +267,7 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
-                RunProcess(@"C:\dev\draft.exe", "up .", projectDir, false, (s, e2) => {
+                RunProcess("draft.exe", "up .", projectDir, false, (s, e2) => {
                     bar.FreezeOutput(0);
                     bar.Clear();
                     //bar.Animation(0, ref icon);
@@ -310,7 +310,7 @@ namespace VSKubernetes
 
                 var packName = "dotnetcore";
                 //String.Format("create . -a \"{0}\"", project.Name.ToLower());
-                RunProcess(@"C:\dev\draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
+                RunProcess("draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
                     var p = (System.Diagnostics.Process)s;
                     if (p.ExitCode != 0)
                     {
