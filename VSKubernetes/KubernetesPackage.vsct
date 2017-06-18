@@ -38,7 +38,9 @@
     <Groups>
       <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup" priority="0x0100">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CSCD_PROJECT_ADD"/>
-        <!-- IDM_VS_CTXT_PROJNODE -->
+      </Group>
+      <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup2" priority="0x0100">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
       </Group>
     </Groups>
 
@@ -54,7 +56,7 @@
               <CommandFlag>DefaultInvisible</CommandFlag>
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
-      <Button guid="guidK8sCommandPackageCmdSet" id="K8sCommandId" priority="0x0100" type="Button">
+      <Button guid="guidK8sCommandPackageCmdSet" id="K8sAddSupportCommandId" priority="0x0100" type="Button">
         <Parent guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup" />
         <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -63,6 +65,17 @@
           <ButtonText>Kubernetes Support</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidK8sCommandPackageCmdSet" id="K8sDeployCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup2" />
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Deploy to Kubernetes cluster</ButtonText>
+        </Strings>
+      </Button>
+
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -83,7 +96,9 @@
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidK8sCommandPackageCmdSet" value="{1ebe970b-154e-45ac-b92e-9083d5b0c87b}">
       <IDSymbol name="K8sMenuGroup" value="0x1020" />
-      <IDSymbol name="K8sCommandId" value="0x0100" />
+      <IDSymbol name="K8sMenuGroup2" value="0x1021" />
+      <IDSymbol name="K8sAddSupportCommandId" value="0x0100" />
+      <IDSymbol name="K8sDeployCommandId" value="0x0101" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{83fc7137-67a0-47b5-81a3-398b39c4ffca}" >

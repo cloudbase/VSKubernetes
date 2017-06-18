@@ -14,7 +14,6 @@
   </TemplateData>
   <TemplateContent>
     <Project File="KubernetesProject.k8sproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true" OpenInEditor="true">application.yaml</ProjectItem>
     </Project>
   </TemplateContent>
 </VSTemplate>

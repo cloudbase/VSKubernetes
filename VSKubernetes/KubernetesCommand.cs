@@ -11,6 +11,7 @@ using EnvDTE100;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.Diagnostics;
 
 namespace VSKubernetes
 {
@@ -22,7 +23,8 @@ namespace VSKubernetes
         /// <summary>
         /// Command ID.
         /// </summary>
-        public const int CommandId = 0x0100;
+        private const int K8sAddSupportCommandId = 0x0100;
+        private const int K8sDeployCommandId = 0x0101;
 
         /*
         public static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
@@ -34,6 +36,8 @@ namespace VSKubernetes
 
         public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
+
+        private static readonly Guid kubernetesPaneGuid = new Guid("2BE8BB60-E918-4C59-8717-B078A6927D34");
 
         /// <summary>
         /// VS Package that provides this command, not null.
@@ -57,9 +61,14 @@ namespace VSKubernetes
             OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (commandService != null)
             {
-                var menuCommandID = new CommandID(Constants.guidCommandSet, CommandId);
-                var menuItem = new OleMenuCommand(this.MenuItemCallback, menuCommandID);
-                menuItem.BeforeQueryStatus += new EventHandler(OnBeforeQueryStatus);
+                var menuCommandID = new CommandID(Constants.guidCommandSet, K8sAddSupportCommandId);
+                var menuItem = new OleMenuCommand(this.MenuItemCallbackK8sAddSupport, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sAddSupport);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(Constants.guidCommandSet, K8sDeployCommandId);
+                menuItem = new OleMenuCommand(this.MenuItemCallbackK8sDeploy, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sDeploy);
                 commandService.AddCommand(menuItem);
             }
         }
@@ -74,7 +83,7 @@ namespace VSKubernetes
         private IVsOutputWindowPane GetOutputPane(Guid paneGuid, string title, bool visible, bool clearWithSolution)
         {
             IVsOutputWindow output = (IVsOutputWindow)ServiceProvider.GetService(typeof(SVsOutputWindow)); IVsOutputWindowPane pane;
-            //output.CreatePane(ref paneGuid, title, Convert.ToInt32(visible), Convert.ToInt32(clearWithSolution));
+            output.CreatePane(ref paneGuid, title, Convert.ToInt32(visible), Convert.ToInt32(clearWithSolution));
             var hr = output.GetPane(ref paneGuid, out pane);
             Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
             return pane;
@@ -82,13 +91,14 @@ namespace VSKubernetes
 
         private void WriteToOutputWindow(string message)
         {
-            var paneGuid = Microsoft.VisualStudio.VSConstants.OutputWindowPaneGuid.DebugPane_guid;
-            var pane = GetOutputPane(paneGuid, "Kubernetes", true, true);
+            //var paneGuid = Microsoft.VisualStudio.VSConstants.OutputWindowPaneGuid.DebugPane_guid;
+            var paneGuid = kubernetesPaneGuid;
+            var pane = GetOutputPane(paneGuid, "Kubernetes", true, false);
             pane.Activate();
             pane.OutputString(message + "\n");
         }
 
-        private bool projectHasDockerFile(Project project)
+        private bool ProjectHasDockerFile(Project project)
         {
             foreach (ProjectItem p in project.ProjectItems)
                 if (p.Name == dockerFileName && VSConstants.GUID_ItemType_PhysicalFile == new Guid(p.Kind))
@@ -96,17 +106,22 @@ namespace VSKubernetes
             return false;
         }
 
-        private void OnBeforeQueryStatus(object sender, EventArgs e)
+        private void OnBeforeQueryStatusK8sAddSupport(object sender, EventArgs e)
         {
             OleMenuCommand item = (OleMenuCommand)sender;
             var project = this.GetCurrentProject();
 
-            item.Visible = projectHasDockerFile(project);
-            item.Enabled = item.Visible;
+            item.Visible = true;
+            item.Enabled = !ProjectHasDockerFile(project);
+        }
 
-            this.WriteToOutputWindow(project.Kind);
+        private void OnBeforeQueryStatusK8sDeploy(object sender, EventArgs e)
+        {
+            OleMenuCommand item = (OleMenuCommand)sender;
+            var project = this.GetCurrentProject();
 
-            //var outputType = project.Properties.Item("OutputType").Value;
+            item.Visible =true ;
+            item.Enabled = ProjectHasDockerFile(project);
         }
 
         /// <summary>
@@ -171,7 +186,54 @@ namespace VSKubernetes
             solution.AddFromFile(projectFilePath, false);
         }
 
-        private bool projectExists(Solution solution, string projectName)
+        private int RunProcess(string path, string arguments="", string workingDirectory="", bool wait=false, EventHandler onExit=null)
+        {
+            System.Diagnostics.Process p = new System.Diagnostics.Process();
+            p.StartInfo.FileName = path;
+            p.StartInfo.WorkingDirectory = workingDirectory;
+            p.StartInfo.Arguments = arguments;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            p.StartInfo.CreateNoWindow = true;
+            p.OutputDataReceived += Process_OutputDataReceived;
+            p.ErrorDataReceived += Process_ErrorDataReceived;
+            if (onExit != null)
+            {
+                p.EnableRaisingEvents = true;
+                p.Exited += onExit;
+            }
+
+            p.Start();
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+
+            if (wait)
+            {
+                p.WaitForExit();
+                return p.ExitCode;
+            }
+            return -1;
+        }
+
+        private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                WriteToOutputWindow(e.Data);
+            }
+        }
+
+        private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                WriteToOutputWindow(e.Data);
+            }
+        }
+
+        private bool ProjectExists(Solution solution, string projectName)
         {
             foreach (Project p in solution.Projects)
                 if (p.Name == kubernetesProjectName)
@@ -179,15 +241,91 @@ namespace VSKubernetes
             return false;
         }
 
-        private void MenuItemCallback(object sender, EventArgs e)
+        private IVsStatusbar GetStatusBar()
+        {
+            return this.ServiceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
+        }
+
+        private void MenuItemCallbackK8sDeploy(object sender, EventArgs e)
         {
             try
             {
-                DTE service = (DTE)this.ServiceProvider.GetService(typeof(DTE));
-                var solution = service.Solution;
-                if(!projectExists(solution, kubernetesProjectName))
-                    //CreateProject((Solution4)solution, kubernetesProjectName, false);
-                    CreateProjectFromTemplate((Solution4)solution, "KubernetesProjectTemplate.zip", "Yaml", kubernetesProjectName, true);
+                var project = GetCurrentProject();
+                var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
+
+                var bar = GetStatusBar();
+                int frozen;
+                bar.IsFrozen(out frozen);
+
+                if (frozen != 0)
+                {
+                    bar.FreezeOutput(0);
+                }
+
+                //object icon = (short)Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Deploy;
+                //bar.Animation(1, ref icon);
+                bar.SetText("Deploying Kubernetes Helm Chart...");
+                bar.FreezeOutput(1);
+
+                RunProcess(@"C:\dev\draft.exe", "up .", projectDir, false, (s, e2) => {
+                    bar.FreezeOutput(0);
+                    bar.Clear();
+                    //bar.Animation(0, ref icon);
+                    var p = (System.Diagnostics.Process)s;
+                    if (p.ExitCode != 0)
+                    {
+                        WriteToOutputWindow("draft up failed");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                string title = "Kubernetes for Visual Studio";
+                VsShellUtilities.ShowMessageBox(
+                    this.ServiceProvider,
+                    message,
+                    title,
+                    OLEMSGICON.OLEMSGICON_WARNING,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            }
+        }
+
+        private void DisableDraftWatch(string projectDir)
+        {
+            var draftTomlFileName = "draft.toml";
+            var path = System.IO.Path.Combine(projectDir, draftTomlFileName);
+            string text = System.IO.File.ReadAllText(path, System.Text.Encoding.ASCII);
+            text = text.Replace("watch = true", "watch = false");
+            System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
+        }
+
+        private void MenuItemCallbackK8sAddSupport(object sender, EventArgs e)
+        {
+            try
+            {
+                var project = GetCurrentProject();
+                var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
+
+                var packName = "dotnetcore";
+                //String.Format("create . -a \"{0}\"", project.Name.ToLower());
+                RunProcess(@"C:\dev\draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
+                    var p = (System.Diagnostics.Process)s;
+                    if (p.ExitCode != 0)
+                    {
+                        WriteToOutputWindow("draft create failed");
+                        //throw new Exception("draft create failed");
+                    }
+                    else
+                    {
+                        DisableDraftWatch(projectDir);
+                    }
+                });
+
+                //if(!ProjectExists(solution, kubernetesProjectName))
+                //    //CreateProject((Solution4)solution, kubernetesProjectName, false);
+                //    CreateProjectFromTemplate((Solution4)solution, "KubernetesProjectTemplate.zip", "Yaml", kubernetesProjectName, true);
             }
             catch (Exception ex)
             {
