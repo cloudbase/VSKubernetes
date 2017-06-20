@@ -27,12 +27,15 @@ namespace VSKubernetes
         private const int K8sDeployCommandId = 0x0101;
 
         /*
-        public static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
         public static readonly Guid projectTypeCSharp = new Guid("FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
         public static readonly Guid projectTypeVBNet = new Guid("F184B08F-C81C-45F6-A57F-5ABD9991F28F");
         public static readonly Guid projectTypeVCpp = new Guid("8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942");
         public static readonly Guid projectTypeDockerCompose = new Guid("E53339B2-1760-4266-BCC7-CA923CBCF16C");
         */
+
+        private static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
+        //private static readonly Guid projectTypeNodeJs = new Guid("3AF33F2E-1136-4D97-BBB7-1795711AC8B8");
+        private static readonly Guid projectTypeNodeJs = new Guid("9092AA53-FB77-4645-B42D-1CCCA6BD08BD");
 
         public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
@@ -308,7 +311,15 @@ namespace VSKubernetes
                 var project = GetCurrentProject();
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
 
-                var packName = "dotnetcore";
+                string packName = null;
+                var projectKindGuid = new Guid(project.Kind);
+                if (projectKindGuid == projectTypeCSharpCore)
+                    packName = "dotnetcore";
+                else if (projectKindGuid == projectTypeNodeJs)
+                    packName = "node";
+                else
+                    throw new Exception("Unsupported project type");
+
                 //String.Format("create . -a \"{0}\"", project.Name.ToLower());
                 RunProcess("draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
                     var p = (System.Diagnostics.Process)s;
@@ -320,6 +331,15 @@ namespace VSKubernetes
                     else
                     {
                         DisableDraftWatch(projectDir);
+                        foreach (var fileName in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
+                        {
+                            var path = System.IO.Path.Combine(projectDir, fileName);
+                            if (System.IO.File.Exists(path))
+                                project.ProjectItems.AddFromFile(path);
+                            else if (System.IO.Directory.Exists(path))
+                                project.ProjectItems.AddFromDirectory(path);
+
+                        }
                     }
                 });
 
