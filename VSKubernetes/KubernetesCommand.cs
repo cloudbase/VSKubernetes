@@ -103,10 +103,16 @@ namespace VSKubernetes
 
         private bool ProjectHasDockerFile(Project project)
         {
+            var item = GetProjectItem(project, dockerFileName);
+            return (item != null && VSConstants.GUID_ItemType_PhysicalFile == new Guid(item.Kind));
+        }
+
+        private ProjectItem GetProjectItem(Project project, string name)
+        {
             foreach (ProjectItem p in project.ProjectItems)
-                if (p.Name == dockerFileName && VSConstants.GUID_ItemType_PhysicalFile == new Guid(p.Kind))
-                    return true;
-            return false;
+                if (p.Name == name)
+                    return p;
+            return null;
         }
 
         private void OnBeforeQueryStatusK8sAddSupport(object sender, EventArgs e)
@@ -271,27 +277,31 @@ namespace VSKubernetes
                 bar.FreezeOutput(1);
 
                 RunProcess("draft.exe", "up .", projectDir, false, (s, e2) => {
-                    bar.FreezeOutput(0);
-                    bar.Clear();
-                    //bar.Animation(0, ref icon);
-                    var p = (System.Diagnostics.Process)s;
-                    if (p.ExitCode != 0)
-                    {
-                        WriteToOutputWindow("draft up failed");
-                    }
+                    ThreadHelper.JoinableTaskFactory.Run(async delegate {
+                        // Switch to main thread
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        try
+                        {
+                            bar.FreezeOutput(0);
+                            bar.Clear();
+                            //bar.Animation(0, ref icon);
+                            var p = (System.Diagnostics.Process)s;
+                            if (p.ExitCode != 0)
+                            {
+                                WriteToOutputWindow("draft up failed");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            showWarningMessageBox(ex.Message);
+                        }
+                    });
                 });
             }
             catch (Exception ex)
             {
-                string message = ex.Message;
-                string title = "Kubernetes for Visual Studio";
-                VsShellUtilities.ShowMessageBox(
-                    this.ServiceProvider,
-                    message,
-                    title,
-                    OLEMSGICON.OLEMSGICON_WARNING,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                showWarningMessageBox(ex.Message);
             }
         }
 
@@ -302,6 +312,18 @@ namespace VSKubernetes
             string text = System.IO.File.ReadAllText(path, System.Text.Encoding.ASCII);
             text = text.Replace("watch = true", "watch = false");
             System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
+        }
+
+        private void showWarningMessageBox(string message)
+        {
+            string title = "Kubernetes for Visual Studio";
+            VsShellUtilities.ShowMessageBox(
+                this.ServiceProvider,
+                message,
+                title,
+                OLEMSGICON.OLEMSGICON_WARNING,
+                OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }
 
         private void MenuItemCallbackK8sAddSupport(object sender, EventArgs e)
@@ -322,25 +344,43 @@ namespace VSKubernetes
 
                 //String.Format("create . -a \"{0}\"", project.Name.ToLower());
                 RunProcess("draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
-                    var p = (System.Diagnostics.Process)s;
-                    if (p.ExitCode != 0)
-                    {
-                        WriteToOutputWindow("draft create failed");
-                        //throw new Exception("draft create failed");
-                    }
-                    else
-                    {
-                        DisableDraftWatch(projectDir);
-                        foreach (var fileName in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
-                        {
-                            var path = System.IO.Path.Combine(projectDir, fileName);
-                            if (System.IO.File.Exists(path))
-                                project.ProjectItems.AddFromFile(path);
-                            else if (System.IO.Directory.Exists(path))
-                                project.ProjectItems.AddFromDirectory(path);
+                    ThreadHelper.JoinableTaskFactory.Run(async delegate {
+                        // Switch to main thread
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+                        try
+                        {
+                            var p = (System.Diagnostics.Process)s;
+                            if (p.ExitCode != 0)
+                            {
+                                WriteToOutputWindow("draft create failed");
+                                //throw new Exception("draft create failed");
+                            }
+                            else
+                            {
+                                DisableDraftWatch(projectDir);
+                                foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
+                                {
+                                    if (GetProjectItem(project, name) == null)
+                                    {
+                                        var path = System.IO.Path.Combine(projectDir, name);
+                                        if (System.IO.File.Exists(path))
+                                            project.ProjectItems.AddFromFile(path);
+                                        else if (System.IO.Directory.Exists(path))
+                                            project.ProjectItems.AddFromDirectory(path);
+                                    }
+                                }
+
+                                //DTE dte = (DTE)this.ServiceProvider.GetService(typeof(DTE));
+                                //dte.ExecuteCommand("View.ServerExplorer");
+                                //dte.ExecuteCommand("View.Refresh");
+                            }
                         }
-                    }
+                        catch (Exception ex)
+                        {
+                            showWarningMessageBox(ex.Message);
+                        }
+                    });
                 });
 
                 //if(!ProjectExists(solution, kubernetesProjectName))
@@ -349,15 +389,7 @@ namespace VSKubernetes
             }
             catch (Exception ex)
             {
-                string message = ex.Message;
-                string title = "Kubernetes for Visual Studio";
-                VsShellUtilities.ShowMessageBox(
-                    this.ServiceProvider,
-                    message,
-                    title,
-                    OLEMSGICON.OLEMSGICON_WARNING,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                showWarningMessageBox(ex.Message);
             }
         }
     }
