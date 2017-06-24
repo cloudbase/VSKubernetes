@@ -25,6 +25,7 @@ namespace VSKubernetes
         /// </summary>
         private const int K8sAddSupportCommandId = 0x0100;
         private const int K8sDeployCommandId = 0x0101;
+        private const int K8sDeployMinikubeCommandId = 0x0102;
 
         /*
         public static readonly Guid projectTypeCSharp = new Guid("FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
@@ -72,6 +73,11 @@ namespace VSKubernetes
                 menuCommandID = new CommandID(Constants.guidCommandSet, K8sDeployCommandId);
                 menuItem = new OleMenuCommand(this.MenuItemCallbackK8sDeploy, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sDeploy);
+                commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(Constants.guidCommandSet, K8sDeployMinikubeCommandId);
+                menuItem = new OleMenuCommand(this.MenuItemCallbackK8sMinikubeDeploy, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sMinikubeDeploy);
                 commandService.AddCommand(menuItem);
             }
         }
@@ -122,6 +128,13 @@ namespace VSKubernetes
 
             item.Visible = true;
             item.Enabled = !ProjectHasDockerFile(project);
+        }
+
+        private void OnBeforeQueryStatusK8sMinikubeDeploy(object sender, EventArgs e)
+        {
+            OleMenuCommand item = (OleMenuCommand)sender;
+            item.Visible = true;
+            item.Enabled = true;
         }
 
         private void OnBeforeQueryStatusK8sDeploy(object sender, EventArgs e)
@@ -178,11 +191,20 @@ namespace VSKubernetes
             solution.AddFromTemplate(template, projectDir, projectName, false);
         }
 
-        private string GetVSExtensionFilePath(string relPath)
+        private string GetVSExtensionDir()
         {
             var extensionPath = new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath;
-            var extensionDir = System.IO.Path.GetDirectoryName(extensionPath);
-            return System.IO.Path.Combine(extensionDir, relPath);
+            return System.IO.Path.GetDirectoryName(extensionPath);
+        }
+
+        private string GetBinariesDir()
+        {
+            return System.IO.Path.Combine(GetVSExtensionDir(), "Binaries");
+        }
+
+        private string GetVSExtensionFilePath(string relPath)
+        {
+            return System.IO.Path.Combine(GetVSExtensionDir(), relPath);
         }
 
         private void CreateProject(Solution4 solution, string projectName, bool createProjectDir = true)
@@ -255,6 +277,53 @@ namespace VSKubernetes
             return this.ServiceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
         }
 
+        private void MenuItemCallbackK8sMinikubeDeploy(object sender, EventArgs e)
+        {
+            OleMenuCommand menuCommand = (OleMenuCommand)sender;
+
+            var baseDir = GetBinariesDir();
+            var ps1Path = System.IO.Path.Combine(baseDir, "DeployMinikube.ps1");
+
+            var bar = GetStatusBar();
+            int frozen;
+            bar.IsFrozen(out frozen);
+
+            if (frozen != 0)
+            {
+                bar.FreezeOutput(0);
+            }
+            bar.SetText("Deploying Minikube...");
+            bar.FreezeOutput(1);
+
+            menuCommand.Enabled = false;
+
+            RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", ps1Path),
+                       baseDir, false, (s, e2) => {
+                ThreadHelper.JoinableTaskFactory.Run(async delegate {
+                    // Switch to main thread
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    try
+                    {
+                        menuCommand.Enabled = true;
+
+                        bar.FreezeOutput(0);
+                        bar.Clear();
+
+                        var p = (System.Diagnostics.Process)s;
+                        if (p.ExitCode != 0)
+                        {
+                            throw new Exception("Minikube deployment failed");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        showWarningMessageBox(ex.Message);
+                    }
+                });
+            });
+        }
+
         private void MenuItemCallbackK8sDeploy(object sender, EventArgs e)
         {
             try
@@ -276,7 +345,8 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
-                RunProcess("draft.exe", "up .", projectDir, false, (s, e2) => {
+                var draftPath = System.IO.Path.Combine(GetBinariesDir(), "draft.exe");
+                RunProcess(draftPath, "up .", projectDir, false, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -343,7 +413,8 @@ namespace VSKubernetes
                     throw new Exception("Unsupported project type");
 
                 //String.Format("create . -a \"{0}\"", project.Name.ToLower());
-                RunProcess("draft.exe", String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
+                var draftPath = System.IO.Path.Combine(GetBinariesDir(), "draft.exe");
+                RunProcess(draftPath, String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
