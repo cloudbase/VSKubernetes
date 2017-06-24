@@ -86,6 +86,9 @@
     <Content Include="Binaries\DeployMinikube.ps1">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="Binaries\Utils.psm1">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Key.snk" />
     <Content Include="LICENSE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
