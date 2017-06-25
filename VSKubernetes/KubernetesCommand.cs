@@ -12,6 +12,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace VSKubernetes
 {
@@ -115,7 +116,12 @@ namespace VSKubernetes
 
         private ProjectItem GetProjectItem(Project project, string name)
         {
-            foreach (ProjectItem p in project.ProjectItems)
+            return GetProjectItem(project.ProjectItems, name);
+        }
+
+        private ProjectItem GetProjectItem(ProjectItems items, string name)
+        {
+            foreach (ProjectItem p in items)
                 if (p.Name == name)
                     return p;
             return null;
@@ -217,7 +223,7 @@ namespace VSKubernetes
             solution.AddFromFile(projectFilePath, false);
         }
 
-        private int RunProcess(string path, string arguments="", string workingDirectory="", bool wait=false, EventHandler onExit=null)
+        private System.Diagnostics.Process RunProcess(string path, string arguments="", string workingDirectory="", bool wait=false, EventHandler onExit=null)
         {
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.FileName = path;
@@ -243,9 +249,8 @@ namespace VSKubernetes
             if (wait)
             {
                 p.WaitForExit();
-                return p.ExitCode;
             }
-            return -1;
+            return p;
         }
 
         private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -318,7 +323,7 @@ namespace VSKubernetes
                     }
                     catch (Exception ex)
                     {
-                        showWarningMessageBox(ex.Message);
+                        ShowWarningMessageBox(ex.Message);
                     }
                 });
             });
@@ -364,14 +369,14 @@ namespace VSKubernetes
                         }
                         catch (Exception ex)
                         {
-                            showWarningMessageBox(ex.Message);
+                            ShowWarningMessageBox(ex.Message);
                         }
                     });
                 });
             }
             catch (Exception ex)
             {
-                showWarningMessageBox(ex.Message);
+                ShowWarningMessageBox(ex.Message);
             }
         }
 
@@ -384,7 +389,7 @@ namespace VSKubernetes
             System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
         }
 
-        private void showWarningMessageBox(string message)
+        private void ShowWarningMessageBox(string message)
         {
             string title = "Kubernetes for Visual Studio";
             VsShellUtilities.ShowMessageBox(
@@ -394,6 +399,27 @@ namespace VSKubernetes
                 OLEMSGICON.OLEMSGICON_WARNING,
                 OLEMSGBUTTON.OLEMSGBUTTON_OK,
                 OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+        }
+
+        private void AddItemsToProject(ProjectItems projectItems, IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                var itemName = System.IO.Path.GetFileName(path);
+                if (System.IO.File.Exists(path))
+                {
+                    if (GetProjectItem(projectItems, itemName) == null)
+                        projectItems.AddFromFile(path);
+                }
+                else if (System.IO.Directory.Exists(path))
+                {
+                    var childProjectItem = GetProjectItem(projectItems, itemName);
+                    if (childProjectItem == null)
+                        childProjectItem = projectItems.AddFromDirectory(path);
+                    var childPaths = System.IO.Directory.GetFileSystemEntries(path);
+                    AddItemsToProject(childProjectItem.ProjectItems, childPaths);
+                }
+            }
         }
 
         private void MenuItemCallbackK8sAddSupport(object sender, EventArgs e)
@@ -430,17 +456,10 @@ namespace VSKubernetes
                             else
                             {
                                 DisableDraftWatch(projectDir);
+                                var paths = new List<string>();
                                 foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
-                                {
-                                    if (GetProjectItem(project, name) == null)
-                                    {
-                                        var path = System.IO.Path.Combine(projectDir, name);
-                                        if (System.IO.File.Exists(path))
-                                            project.ProjectItems.AddFromFile(path);
-                                        else if (System.IO.Directory.Exists(path))
-                                            project.ProjectItems.AddFromDirectory(path);
-                                    }
-                                }
+                                    paths.Add(System.IO.Path.Combine(projectDir, name));
+                                AddItemsToProject(project.ProjectItems, paths);
 
                                 //DTE dte = (DTE)this.ServiceProvider.GetService(typeof(DTE));
                                 //dte.ExecuteCommand("View.ServerExplorer");
@@ -449,7 +468,7 @@ namespace VSKubernetes
                         }
                         catch (Exception ex)
                         {
-                            showWarningMessageBox(ex.Message);
+                            ShowWarningMessageBox(ex.Message);
                         }
                     });
                 });
@@ -460,7 +479,7 @@ namespace VSKubernetes
             }
             catch (Exception ex)
             {
-                showWarningMessageBox(ex.Message);
+                ShowWarningMessageBox(ex.Message);
             }
         }
     }
