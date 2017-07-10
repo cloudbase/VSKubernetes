@@ -405,19 +405,27 @@ namespace VSKubernetes
         {
             foreach (var path in paths)
             {
-                var itemName = System.IO.Path.GetFileName(path);
-                if (System.IO.File.Exists(path))
+                try
                 {
-                    if (GetProjectItem(projectItems, itemName) == null)
-                        projectItems.AddFromFile(path);
+
+                    var itemName = System.IO.Path.GetFileName(path);
+                    if (System.IO.File.Exists(path))
+                    {
+                        if (GetProjectItem(projectItems, itemName) == null)
+                            projectItems.AddFromFile(path);
+                    }
+                    else if (System.IO.Directory.Exists(path))
+                    {
+                        var childProjectItem = GetProjectItem(projectItems, itemName);
+                        if (childProjectItem == null)
+                            childProjectItem = projectItems.AddFromDirectory(path);
+                        var childPaths = System.IO.Directory.GetFileSystemEntries(path);
+                        AddItemsToProject(childProjectItem.ProjectItems, childPaths);
+                    }
                 }
-                else if (System.IO.Directory.Exists(path))
+                catch (InvalidOperationException)
                 {
-                    var childProjectItem = GetProjectItem(projectItems, itemName);
-                    if (childProjectItem == null)
-                        childProjectItem = projectItems.AddFromDirectory(path);
-                    var childPaths = System.IO.Directory.GetFileSystemEntries(path);
-                    AddItemsToProject(childProjectItem.ProjectItems, childPaths);
+                    // Item exists, ignore exception
                 }
             }
         }
