@@ -10,6 +10,7 @@ Exec { .\minikube.exe start --vm-driver=hyperv --hyperv-virtual-switch="$(GetVMS
 Exec { .\helm.exe init }
 Exec { .\minikube.exe addons enable ingress }
 Exec { .\minikube addons enable registry }
+Exec { .\minikube addons enable heapster }
 
 $minikubeIp = Exec { $(.\minikube ip) }
 
