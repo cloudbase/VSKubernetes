@@ -24,22 +24,13 @@ namespace VSKubernetes
         */
 
         private static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
-        //private static readonly Guid projectTypeNodeJs = new Guid("3AF33F2E-1136-4D97-BBB7-1795711AC8B8");
         private static readonly Guid projectTypeNodeJs = new Guid("9092AA53-FB77-4645-B42D-1CCCA6BD08BD");
 
         public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
 
-        /// <summary>
-        /// VS Package that provides this command, not null.
-        /// </summary>
         private readonly Package package;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KubernetesCommand"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
         private KubernetesCommand(Package package)
         {
             if (package == null)
@@ -100,18 +91,12 @@ namespace VSKubernetes
             item.Enabled = ProjectHasDockerFile(project);
         }
 
-        /// <summary>
-        /// Gets the instance of the command.
-        /// </summary>
         public static KubernetesCommand Instance
         {
             get;
             private set;
         }
 
-        /// <summary>
-        /// Gets the service provider from the owner package.
-        /// </summary>
         private IServiceProvider ServiceProvider
         {
             get
@@ -120,10 +105,6 @@ namespace VSKubernetes
             }
         }
 
-        /// <summary>
-        /// Initializes the singleton instance of the command.
-        /// </summary>
-        /// <param name="package">Owner package, not null.</param>
         public static void Initialize(Package package)
         {
             Instance = new KubernetesCommand(package);
@@ -195,7 +176,6 @@ namespace VSKubernetes
 
             Kubernetes.DeployMinikube(Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                 ThreadHelper.JoinableTaskFactory.Run(async delegate {
-                    // Switch to main thread
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                     try
@@ -242,7 +222,6 @@ namespace VSKubernetes
 
                 Kubernetes.DraftUp(projectDir, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
-                        // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                         try
@@ -253,7 +232,9 @@ namespace VSKubernetes
                             var p = (System.Diagnostics.Process)s;
                             if (p.ExitCode != 0)
                             {
-                                Utils.WriteToOutputWindow(this.ServiceProvider, "draft up failed");
+                                var message = "draft up failed";
+                                Utils.WriteToOutputWindow(this.ServiceProvider, message);
+                                throw new Exception(message);
                             }
                         }
                         catch (Exception ex)
@@ -287,7 +268,6 @@ namespace VSKubernetes
 
                 Kubernetes.DraftCreate(projectDir, packName, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
-                        // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                         try
@@ -295,8 +275,9 @@ namespace VSKubernetes
                             var p = (System.Diagnostics.Process)s;
                             if (p.ExitCode != 0)
                             {
-                                Utils.WriteToOutputWindow(this.ServiceProvider, "draft create failed");
-                                //throw new Exception("draft create failed");
+                                var message = "draft create failed";
+                                Utils.WriteToOutputWindow(this.ServiceProvider, message);
+                                throw new Exception(message);
                             }
                             else
                             {
@@ -305,10 +286,6 @@ namespace VSKubernetes
                                 foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
                                     paths.Add(System.IO.Path.Combine(projectDir, name));
                                 Utils.AddItemsToProject(project.ProjectItems, paths);
-
-                                //DTE dte = (DTE)this.ServiceProvider.GetService(typeof(DTE));
-                                //dte.ExecuteCommand("View.ServerExplorer");
-                                //dte.ExecuteCommand("View.Refresh");
                             }
                         }
                         catch (Exception ex)
@@ -317,10 +294,6 @@ namespace VSKubernetes
                         }
                     });
                 });
-
-                //if(!ProjectExists(solution, kubernetesProjectName))
-                //    //CreateProject((Solution4)solution, kubernetesProjectName, false);
-                //    CreateProjectFromTemplate((Solution4)solution, "KubernetesProjectTemplate.zip", "Yaml", kubernetesProjectName, true);
             }
             catch (Exception ex)
             {
