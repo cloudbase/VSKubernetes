@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="ConfiguredProject.cs" />
     <Compile Include="ImageMonikers.cs" />
+    <Compile Include="Kubernetes.cs" />
     <Compile Include="KubernetesCommand.cs" />
     <Compile Include="KubernetesPackage.cs" />
     <Compile Include="Constants.cs" />

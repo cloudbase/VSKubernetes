@@ -110,32 +110,6 @@ namespace VSKubernetes
             Instance = new KubernetesCommand(package);
         }
 
-        private void CreateProjectFromTemplate(Solution4 solution, string templateName, string language, string projectName, bool createProjectDir=true)
-        {
-            var solutionDir = System.IO.Path.GetDirectoryName(solution.FileName);
-
-            var projectDir = solutionDir;
-            if (createProjectDir)
-                projectDir = System.IO.Path.Combine(solutionDir, projectName);
-            if (!projectDir.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                projectDir += System.IO.Path.DirectorySeparatorChar;
-
-            var template = Utils.GetVSExtensionFilePath("ProjectTemplates\\Kubernetes\\1033\\KubernetesProjectTemplate\\KubernetesProjectTemplate.vstemplate");
-
-            //var template = solution.GetProjectTemplate(templateName, language);
-            solution.AddFromTemplate(template, projectDir, projectName, false);
-        }
-
-        private void CreateProject(Solution4 solution, string projectName, bool createProjectDir = true)
-        {
-            var solutionDir = System.IO.Path.GetDirectoryName(solution.FileName);
-
-            var projectTemplatePath = Utils.GetVSExtensionFilePath("Templates\\Projects\\KubernetesProject\\KubernetesProject.k8sproj");
-            var projectFilePath = System.IO.Path.Combine(solutionDir, projectName + ".k8sproj");
-            System.IO.File.Copy(projectTemplatePath, projectFilePath, true);
-            solution.AddFromFile(projectFilePath, false);
-        }
-
         private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
