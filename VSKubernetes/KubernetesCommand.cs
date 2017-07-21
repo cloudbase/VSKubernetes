@@ -42,8 +42,6 @@ namespace VSKubernetes
         public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
 
-        private static readonly Guid kubernetesPaneGuid = new Guid("2BE8BB60-E918-4C59-8717-B078A6927D34");
-
         /// <summary>
         /// VS Package that provides this command, not null.
         /// </summary>
@@ -83,54 +81,16 @@ namespace VSKubernetes
             }
         }
 
-        private Project GetCurrentProject()
-        {
-            DTE service = (DTE)this.ServiceProvider.GetService(typeof(DTE));
-            var activeSolutionProjects = (Array)service.ActiveSolutionProjects;
-            return (Project)activeSolutionProjects.GetValue(0);
-        }
-
-        private IVsOutputWindowPane GetOutputPane(Guid paneGuid, string title, bool visible, bool clearWithSolution)
-        {
-            IVsOutputWindow output = (IVsOutputWindow)ServiceProvider.GetService(typeof(SVsOutputWindow)); IVsOutputWindowPane pane;
-            output.CreatePane(ref paneGuid, title, Convert.ToInt32(visible), Convert.ToInt32(clearWithSolution));
-            var hr = output.GetPane(ref paneGuid, out pane);
-            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hr);
-            return pane;
-        }
-
-        private void WriteToOutputWindow(string message)
-        {
-            //var paneGuid = Microsoft.VisualStudio.VSConstants.OutputWindowPaneGuid.DebugPane_guid;
-            var paneGuid = kubernetesPaneGuid;
-            var pane = GetOutputPane(paneGuid, "Kubernetes", true, false);
-            pane.Activate();
-            pane.OutputString(message + "\n");
-        }
-
         private bool ProjectHasDockerFile(Project project)
         {
-            var item = GetProjectItem(project, dockerFileName);
+            var item = Utils.GetProjectItem(project, dockerFileName);
             return (item != null && VSConstants.GUID_ItemType_PhysicalFile == new Guid(item.Kind));
-        }
-
-        private ProjectItem GetProjectItem(Project project, string name)
-        {
-            return GetProjectItem(project.ProjectItems, name);
-        }
-
-        private ProjectItem GetProjectItem(ProjectItems items, string name)
-        {
-            foreach (ProjectItem p in items)
-                if (p.Name == name)
-                    return p;
-            return null;
         }
 
         private void OnBeforeQueryStatusK8sAddSupport(object sender, EventArgs e)
         {
             OleMenuCommand item = (OleMenuCommand)sender;
-            var project = this.GetCurrentProject();
+            var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible = true;
             item.Enabled = !ProjectHasDockerFile(project);
@@ -146,7 +106,7 @@ namespace VSKubernetes
         private void OnBeforeQueryStatusK8sDeploy(object sender, EventArgs e)
         {
             OleMenuCommand item = (OleMenuCommand)sender;
-            var project = this.GetCurrentProject();
+            var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible =true ;
             item.Enabled = ProjectHasDockerFile(project);
@@ -191,73 +151,27 @@ namespace VSKubernetes
             if (!projectDir.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
                 projectDir += System.IO.Path.DirectorySeparatorChar;
 
-            var template = GetVSExtensionFilePath("ProjectTemplates\\Kubernetes\\1033\\KubernetesProjectTemplate\\KubernetesProjectTemplate.vstemplate");
+            var template = Utils.GetVSExtensionFilePath("ProjectTemplates\\Kubernetes\\1033\\KubernetesProjectTemplate\\KubernetesProjectTemplate.vstemplate");
 
             //var template = solution.GetProjectTemplate(templateName, language);
             solution.AddFromTemplate(template, projectDir, projectName, false);
-        }
-
-        private string GetVSExtensionDir()
-        {
-            var extensionPath = new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath;
-            return System.IO.Path.GetDirectoryName(extensionPath);
-        }
-
-        private string GetBinariesDir()
-        {
-            return System.IO.Path.Combine(GetVSExtensionDir(), "Binaries");
-        }
-
-        private string GetVSExtensionFilePath(string relPath)
-        {
-            return System.IO.Path.Combine(GetVSExtensionDir(), relPath);
         }
 
         private void CreateProject(Solution4 solution, string projectName, bool createProjectDir = true)
         {
             var solutionDir = System.IO.Path.GetDirectoryName(solution.FileName);
 
-            var projectTemplatePath = GetVSExtensionFilePath("Templates\\Projects\\KubernetesProject\\KubernetesProject.k8sproj");
+            var projectTemplatePath = Utils.GetVSExtensionFilePath("Templates\\Projects\\KubernetesProject\\KubernetesProject.k8sproj");
             var projectFilePath = System.IO.Path.Combine(solutionDir, projectName + ".k8sproj");
             System.IO.File.Copy(projectTemplatePath, projectFilePath, true);
             solution.AddFromFile(projectFilePath, false);
-        }
-
-        private System.Diagnostics.Process RunProcess(string path, string arguments="", string workingDirectory="", bool wait=false, EventHandler onExit=null)
-        {
-            System.Diagnostics.Process p = new System.Diagnostics.Process();
-            p.StartInfo.FileName = path;
-            p.StartInfo.WorkingDirectory = workingDirectory;
-            p.StartInfo.Arguments = arguments;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-            p.StartInfo.CreateNoWindow = true;
-            p.OutputDataReceived += Process_OutputDataReceived;
-            p.ErrorDataReceived += Process_ErrorDataReceived;
-            if (onExit != null)
-            {
-                p.EnableRaisingEvents = true;
-                p.Exited += onExit;
-            }
-
-            p.Start();
-            p.BeginOutputReadLine();
-            p.BeginErrorReadLine();
-
-            if (wait)
-            {
-                p.WaitForExit();
-            }
-            return p;
         }
 
         private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
             {
-                WriteToOutputWindow(e.Data);
+                Utils.WriteToOutputWindow(this.ServiceProvider, e.Data);
             }
         }
 
@@ -265,16 +179,8 @@ namespace VSKubernetes
         {
             if (e.Data != null)
             {
-                WriteToOutputWindow(e.Data);
+                Utils.WriteToOutputWindow(this.ServiceProvider, e.Data);
             }
-        }
-
-        private bool ProjectExists(Solution solution, string projectName)
-        {
-            foreach (Project p in solution.Projects)
-                if (p.Name == kubernetesProjectName)
-                    return true;
-            return false;
         }
 
         private IVsStatusbar GetStatusBar()
@@ -286,7 +192,7 @@ namespace VSKubernetes
         {
             OleMenuCommand menuCommand = (OleMenuCommand)sender;
 
-            var baseDir = GetBinariesDir();
+            var baseDir = Utils.GetBinariesDir();
             var ps1Path = System.IO.Path.Combine(baseDir, "DeployMinikube.ps1");
 
             var bar = GetStatusBar();
@@ -302,8 +208,8 @@ namespace VSKubernetes
 
             menuCommand.Enabled = false;
 
-            RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", ps1Path),
-                       baseDir, false, (s, e2) => {
+            Utils.RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", ps1Path),
+                       baseDir, false, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                 ThreadHelper.JoinableTaskFactory.Run(async delegate {
                     // Switch to main thread
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -323,7 +229,7 @@ namespace VSKubernetes
                     }
                     catch (Exception ex)
                     {
-                        ShowWarningMessageBox(ex.Message);
+                        Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
                     }
                 });
             });
@@ -333,7 +239,7 @@ namespace VSKubernetes
         {
             try
             {
-                var project = GetCurrentProject();
+                var project = Utils.GetCurrentProject(this.ServiceProvider);
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
 
                 var bar = GetStatusBar();
@@ -350,8 +256,8 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
-                var draftPath = System.IO.Path.Combine(GetBinariesDir(), "draft.exe");
-                RunProcess(draftPath, "up .", projectDir, false, (s, e2) => {
+                var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
+                Utils.RunProcess(draftPath, "up .", projectDir, false, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -364,19 +270,19 @@ namespace VSKubernetes
                             var p = (System.Diagnostics.Process)s;
                             if (p.ExitCode != 0)
                             {
-                                WriteToOutputWindow("draft up failed");
+                                Utils.WriteToOutputWindow(this.ServiceProvider, "draft up failed");
                             }
                         }
                         catch (Exception ex)
                         {
-                            ShowWarningMessageBox(ex.Message);
+                            Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
                         }
                     });
                 });
             }
             catch (Exception ex)
             {
-                ShowWarningMessageBox(ex.Message);
+                Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
             }
         }
 
@@ -389,18 +295,6 @@ namespace VSKubernetes
             System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
         }
 
-        private void ShowWarningMessageBox(string message)
-        {
-            string title = "Kubernetes for Visual Studio";
-            VsShellUtilities.ShowMessageBox(
-                this.ServiceProvider,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_WARNING,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-        }
-
         private void AddItemsToProject(ProjectItems projectItems, IEnumerable<string> paths)
         {
             foreach (var path in paths)
@@ -411,12 +305,12 @@ namespace VSKubernetes
                     var itemName = System.IO.Path.GetFileName(path);
                     if (System.IO.File.Exists(path))
                     {
-                        if (GetProjectItem(projectItems, itemName) == null)
+                        if (Utils.GetProjectItem(projectItems, itemName) == null)
                             projectItems.AddFromFile(path);
                     }
                     else if (System.IO.Directory.Exists(path))
                     {
-                        var childProjectItem = GetProjectItem(projectItems, itemName);
+                        var childProjectItem = Utils.GetProjectItem(projectItems, itemName);
                         if (childProjectItem == null)
                             childProjectItem = projectItems.AddFromDirectory(path);
                         var childPaths = System.IO.Directory.GetFileSystemEntries(path);
@@ -434,7 +328,7 @@ namespace VSKubernetes
         {
             try
             {
-                var project = GetCurrentProject();
+                var project = Utils.GetCurrentProject(this.ServiceProvider);
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
 
                 string packName = null;
@@ -447,8 +341,9 @@ namespace VSKubernetes
                     throw new Exception("Unsupported project type");
 
                 //String.Format("create . -a \"{0}\"", project.Name.ToLower());
-                var draftPath = System.IO.Path.Combine(GetBinariesDir(), "draft.exe");
-                RunProcess(draftPath, String.Format("create . --pack {0}", packName), projectDir, false, (s, e2) => {
+                var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
+                Utils.RunProcess(draftPath, String.Format("create . --pack {0}", packName), projectDir, false,
+                                 Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -458,7 +353,7 @@ namespace VSKubernetes
                             var p = (System.Diagnostics.Process)s;
                             if (p.ExitCode != 0)
                             {
-                                WriteToOutputWindow("draft create failed");
+                                Utils.WriteToOutputWindow(this.ServiceProvider, "draft create failed");
                                 //throw new Exception("draft create failed");
                             }
                             else
@@ -476,7 +371,7 @@ namespace VSKubernetes
                         }
                         catch (Exception ex)
                         {
-                            ShowWarningMessageBox(ex.Message);
+                            Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
                         }
                     });
                 });
@@ -487,7 +382,7 @@ namespace VSKubernetes
             }
             catch (Exception ex)
             {
-                ShowWarningMessageBox(ex.Message);
+                Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
             }
         }
     }
