@@ -1,13 +1,7 @@
-﻿using System;
-using System.ComponentModel.Composition;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+﻿using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.ProjectSystem.VS;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Task = System.Threading.Tasks.Task;
 
 namespace VSKubernetes
 {

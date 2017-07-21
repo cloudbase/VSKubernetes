@@ -1,10 +1,4 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="K8sCommand.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.ComponentModel.Design;
 using EnvDTE;
 using EnvDTE100;
@@ -16,14 +10,8 @@ using System.Collections.Generic;
 
 namespace VSKubernetes
 {
-    /// <summary>
-    /// Command handler
-    /// </summary>
     internal sealed class KubernetesCommand
     {
-        /// <summary>
-        /// Command ID.
-        /// </summary>
         private const int K8sAddSupportCommandId = 0x0100;
         private const int K8sDeployCommandId = 0x0101;
         private const int K8sDeployMinikubeCommandId = 0x0102;
