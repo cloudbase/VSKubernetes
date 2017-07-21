@@ -6,7 +6,9 @@
     <Description xml:space="preserve">Add Kubernetes to your Visual Studio experience, automating a Minikube deployment and generating Helm Charts for you projects with Draft.
 Deploy and run your generated Docker containers and Kubernetes manifests locally on Minikube or deploy them on Azure ACS, OpenStack or other clouds!
 
-This project is it's early stages, supporting ASP.NET Core and Node.js projects to begin with. ASP.NET Framework and Windows Server Containers will be added soon!</Description>
+This project is it's early stages, supporting ASP.NET Core and Node.js projects to begin with. ASP.NET Framework and Windows Server Containers will be added soon!
+
+Kubernetes is a trademark of the The Linux Foundation.</Description>
     <MoreInfo>https://github.com/cloudbase/VSKubernetes</MoreInfo>
     <License>LICENSE.txt</License>
     <Icon>Resources\KubernetesPackage.ico</Icon>
