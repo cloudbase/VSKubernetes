@@ -31,7 +31,6 @@ namespace VSKubernetes
             { projectTypeNodeJs, "node" }
         };
 
-        public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
 
         private readonly Package package;
@@ -69,10 +68,10 @@ namespace VSKubernetes
             }
         }
 
-        private bool ProjectHasDockerFile(Project project)
+        private bool ProjectHasHelmChart(Project project)
         {
-            var item = Utils.GetProjectItem(project, dockerFileName);
-            return (item != null && VSConstants.GUID_ItemType_PhysicalFile == new Guid(item.Kind));
+            var item = Utils.GetProjectItem(project, "chart");
+            return (item != null && VSConstants.GUID_ItemType_PhysicalFolder == new Guid(item.Kind));
         }
 
         private void OnBeforeQueryStatusK8sAddSupport(object sender, EventArgs e)
@@ -81,7 +80,7 @@ namespace VSKubernetes
             var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible = true;
-            item.Enabled = !ProjectHasDockerFile(project) && !draftUpRunning && !draftCreateRunning;
+            item.Enabled = !ProjectHasHelmChart(project) && !draftUpRunning && !draftCreateRunning;
         }
 
         private void OnBeforeQueryStatusK8sMinikubeDeploy(object sender, EventArgs e)
@@ -97,7 +96,7 @@ namespace VSKubernetes
             var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible = true;
-            item.Enabled = ProjectHasDockerFile(project) && !draftUpRunning && !draftCreateRunning && !minikubeDeploymentRunning;
+            item.Enabled = ProjectHasHelmChart(project) && !draftUpRunning && !draftCreateRunning && !minikubeDeploymentRunning;
         }
 
         public static KubernetesCommand Instance
