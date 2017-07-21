@@ -180,9 +180,6 @@ namespace VSKubernetes
         {
             OleMenuCommand menuCommand = (OleMenuCommand)sender;
 
-            var baseDir = Utils.GetBinariesDir();
-            var ps1Path = System.IO.Path.Combine(baseDir, "DeployMinikube.ps1");
-
             var bar = GetStatusBar();
             int frozen;
             bar.IsFrozen(out frozen);
@@ -196,8 +193,7 @@ namespace VSKubernetes
 
             menuCommand.Enabled = false;
 
-            Utils.RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", ps1Path),
-                       baseDir, false, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
+            Kubernetes.DeployMinikube(Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                 ThreadHelper.JoinableTaskFactory.Run(async delegate {
                     // Switch to main thread
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -244,8 +240,7 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
-                var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
-                Utils.RunProcess(draftPath, "up .", projectDir, false, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
+                Kubernetes.DraftUp(projectDir, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -274,44 +269,6 @@ namespace VSKubernetes
             }
         }
 
-        private void DisableDraftWatch(string projectDir)
-        {
-            var draftTomlFileName = "draft.toml";
-            var path = System.IO.Path.Combine(projectDir, draftTomlFileName);
-            string text = System.IO.File.ReadAllText(path, System.Text.Encoding.ASCII);
-            text = text.Replace("watch = true", "watch = false");
-            System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
-        }
-
-        private void AddItemsToProject(ProjectItems projectItems, IEnumerable<string> paths)
-        {
-            foreach (var path in paths)
-            {
-                try
-                {
-
-                    var itemName = System.IO.Path.GetFileName(path);
-                    if (System.IO.File.Exists(path))
-                    {
-                        if (Utils.GetProjectItem(projectItems, itemName) == null)
-                            projectItems.AddFromFile(path);
-                    }
-                    else if (System.IO.Directory.Exists(path))
-                    {
-                        var childProjectItem = Utils.GetProjectItem(projectItems, itemName);
-                        if (childProjectItem == null)
-                            childProjectItem = projectItems.AddFromDirectory(path);
-                        var childPaths = System.IO.Directory.GetFileSystemEntries(path);
-                        AddItemsToProject(childProjectItem.ProjectItems, childPaths);
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    // Item exists, ignore exception
-                }
-            }
-        }
-
         private void MenuItemCallbackK8sAddSupport(object sender, EventArgs e)
         {
             try
@@ -328,10 +285,7 @@ namespace VSKubernetes
                 else
                     throw new Exception("Unsupported project type");
 
-                //String.Format("create . -a \"{0}\"", project.Name.ToLower());
-                var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
-                Utils.RunProcess(draftPath, String.Format("create . --pack {0}", packName), projectDir, false,
-                                 Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
+                Kubernetes.DraftCreate(projectDir, packName, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         // Switch to main thread
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -346,11 +300,11 @@ namespace VSKubernetes
                             }
                             else
                             {
-                                DisableDraftWatch(projectDir);
+                                Kubernetes.DisableDraftWatch(projectDir);
                                 var paths = new List<string>();
                                 foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
                                     paths.Add(System.IO.Path.Combine(projectDir, name));
-                                AddItemsToProject(project.ProjectItems, paths);
+                                Utils.AddItemsToProject(project.ProjectItems, paths);
 
                                 //DTE dte = (DTE)this.ServiceProvider.GetService(typeof(DTE));
                                 //dte.ExecuteCommand("View.ServerExplorer");

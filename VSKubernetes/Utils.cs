@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace VSKubernetes
@@ -119,6 +120,35 @@ namespace VSKubernetes
             var pane = GetOutputPane(serviceProvider, paneGuid, "Kubernetes", true, false);
             pane.Activate();
             pane.OutputString(message + "\n");
+        }
+
+        public static void AddItemsToProject(ProjectItems projectItems, IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                try
+                {
+
+                    var itemName = System.IO.Path.GetFileName(path);
+                    if (System.IO.File.Exists(path))
+                    {
+                        if (Utils.GetProjectItem(projectItems, itemName) == null)
+                            projectItems.AddFromFile(path);
+                    }
+                    else if (System.IO.Directory.Exists(path))
+                    {
+                        var childProjectItem = Utils.GetProjectItem(projectItems, itemName);
+                        if (childProjectItem == null)
+                            childProjectItem = projectItems.AddFromDirectory(path);
+                        var childPaths = System.IO.Directory.GetFileSystemEntries(path);
+                        AddItemsToProject(childProjectItem.ProjectItems, childPaths);
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Item exists, ignore exception
+                }
+            }
         }
     }
 }
