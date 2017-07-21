@@ -78,6 +78,10 @@
     <Content Include="ProjectMoniker.imagemanifest">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Content Include="Resources\preview.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="app.config" />
     <Content Include="BuildSystem\KubernetesProject.targets">
       <IncludeInVSIX>true</IncludeInVSIX>

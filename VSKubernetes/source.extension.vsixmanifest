@@ -2,11 +2,15 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
     <Identity Id="VSKubernetes.Cloudbase.2378e1f1-9b22-4a2d-bd20-f22f811b5aeb" Version="1.0" Language="en-US" Publisher="Alessandro Pilotti" />
-    <DisplayName>Kubernetes for Visual Studio 2017</DisplayName>
-    <Description xml:space="preserve">Kubernetes for Visual Studio 2017</Description>
-    <MoreInfo>https://cloudbase.it</MoreInfo>
+    <DisplayName>Cloudbase Kubernetes for Visual Studio 2017</DisplayName>
+    <Description xml:space="preserve">Add Kubernetes to your Visual Studio experience, automating a Minikube deployment and generating Helm Charts for you projects with Draft.
+Deploy and run your generated Docker containers and Kubernetes manifests locally on Minikube or deploy them on Azure ACS, OpenStack or other clouds!
+
+This project is it's early stages, supporting ASP.NET Core and Node.js projects to begin with. ASP.NET Framework and Windows Server Containers will be added soon!</Description>
+    <MoreInfo>https://github.com/cloudbase/VSKubernetes</MoreInfo>
     <License>LICENSE.txt</License>
     <Icon>Resources\KubernetesPackage.ico</Icon>
+    <PreviewImage>Resources\preview.png</PreviewImage>
     <Tags>kubernetes</Tags>
   </Metadata>
   <Installation AllUsers="true">
