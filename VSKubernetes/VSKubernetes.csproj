@@ -84,7 +84,6 @@
     </Content>
     <None Include="app.config" />
     <Content Include="BuildSystem\KubernetesProject.targets">
-      <IncludeInVSIX>true</IncludeInVSIX>
       <InstallRoot>MSBuild</InstallRoot>
       <VSIXSubPath>Kubernetes</VSIXSubPath>
       <SubType>Designer</SubType>
@@ -286,14 +285,12 @@
     <Content Include="BuildSystem\Rules\none.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-      <IncludeInVSIX>true</IncludeInVSIX>
       <InstallRoot>MSBuild</InstallRoot>
       <VSIXSubPath>Kubernetes\Rules</VSIXSubPath>
     </Content>
     <Content Include="BuildSystem\Rules\ProjectItemsSchema.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-      <IncludeInVSIX>true</IncludeInVSIX>
       <InstallRoot>MSBuild</InstallRoot>
       <VSIXSubPath>Kubernetes\Rules</VSIXSubPath>
     </Content>
