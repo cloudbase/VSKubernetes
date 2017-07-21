@@ -26,10 +26,19 @@ namespace VSKubernetes
         private static readonly Guid projectTypeCSharpCore = new Guid("9A19103F-16F7-4668-BE54-9A1E7A4F7556");
         private static readonly Guid projectTypeNodeJs = new Guid("9092AA53-FB77-4645-B42D-1CCCA6BD08BD");
 
+        private static IDictionary<Guid, string> vsProjectTypeToPackNameMap = new Dictionary <Guid, string> {
+            { projectTypeCSharpCore, "dotnetcore" },
+            { projectTypeNodeJs, "node" }
+        };
+
         public const string dockerFileName = "Dockerfile";
         public const string kubernetesProjectName = "Kubernetes";
 
         private readonly Package package;
+
+        private volatile bool minikubeDeploymentRunning = false;
+        private volatile bool draftCreateRunning = false;
+        private volatile bool draftUpRunning = false;
 
         private KubernetesCommand(Package package)
         {
@@ -72,14 +81,14 @@ namespace VSKubernetes
             var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible = true;
-            item.Enabled = !ProjectHasDockerFile(project);
+            item.Enabled = !ProjectHasDockerFile(project) && !draftUpRunning && !draftCreateRunning;
         }
 
         private void OnBeforeQueryStatusK8sMinikubeDeploy(object sender, EventArgs e)
         {
             OleMenuCommand item = (OleMenuCommand)sender;
             item.Visible = true;
-            item.Enabled = true;
+            item.Enabled = !minikubeDeploymentRunning && !draftCreateRunning;
         }
 
         private void OnBeforeQueryStatusK8sDeploy(object sender, EventArgs e)
@@ -87,8 +96,8 @@ namespace VSKubernetes
             OleMenuCommand item = (OleMenuCommand)sender;
             var project = Utils.GetCurrentProject(this.ServiceProvider);
 
-            item.Visible =true ;
-            item.Enabled = ProjectHasDockerFile(project);
+            item.Visible = true;
+            item.Enabled = ProjectHasDockerFile(project) && !draftUpRunning && !draftCreateRunning && !minikubeDeploymentRunning;
         }
 
         public static KubernetesCommand Instance
@@ -133,8 +142,6 @@ namespace VSKubernetes
 
         private void MenuItemCallbackK8sMinikubeDeploy(object sender, EventArgs e)
         {
-            OleMenuCommand menuCommand = (OleMenuCommand)sender;
-
             var bar = GetStatusBar();
             int frozen;
             bar.IsFrozen(out frozen);
@@ -146,7 +153,7 @@ namespace VSKubernetes
             bar.SetText("Deploying Minikube...");
             bar.FreezeOutput(1);
 
-            menuCommand.Enabled = false;
+            minikubeDeploymentRunning = true;
 
             Kubernetes.DeployMinikube(Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                 ThreadHelper.JoinableTaskFactory.Run(async delegate {
@@ -154,7 +161,7 @@ namespace VSKubernetes
 
                     try
                     {
-                        menuCommand.Enabled = true;
+                        minikubeDeploymentRunning = false;
 
                         bar.FreezeOutput(0);
                         bar.Clear();
@@ -194,12 +201,16 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
+                draftCreateRunning = true;
+
                 Kubernetes.DraftUp(projectDir, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                         try
                         {
+                            draftCreateRunning = false;
+
                             bar.FreezeOutput(0);
                             bar.Clear();
                             //bar.Animation(0, ref icon);
@@ -231,14 +242,14 @@ namespace VSKubernetes
                 var project = Utils.GetCurrentProject(this.ServiceProvider);
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
 
-                string packName = null;
                 var projectKindGuid = new Guid(project.Kind);
-                if (projectKindGuid == projectTypeCSharpCore)
-                    packName = "dotnetcore";
-                else if (projectKindGuid == projectTypeNodeJs)
-                    packName = "node";
-                else
-                    throw new Exception("Unsupported project type");
+                string packName = null;
+                if (!vsProjectTypeToPackNameMap.TryGetValue(new Guid(project.Kind), out packName))
+                {
+                    throw new Exception("Unsupported project type. Only ASP.NET Core and Node.js projects are currently supported for now, more will be added soon!");
+                }
+
+                draftUpRunning = true;
 
                 Kubernetes.DraftCreate(projectDir, packName, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
@@ -246,6 +257,8 @@ namespace VSKubernetes
 
                         try
                         {
+                            draftUpRunning = false;
+
                             var p = (System.Diagnostics.Process)s;
                             if (p.ExitCode != 0)
                             {
