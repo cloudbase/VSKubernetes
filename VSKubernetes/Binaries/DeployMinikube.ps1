@@ -19,5 +19,5 @@ $minikubeIp = Exec { $(.\minikube ip) }
 # Wait for tiller to become ready
 Retry { .\helm.exe list 2>&1 | Out-Null }
 
-$ENV:DRAFT_BASE_DOMAIN="${minikubeIp}.xip.io"
+$ENV:DRAFT_BASE_DOMAIN="${minikubeIp}.nip.io"
 Exec { .\draft.exe init --auto-accept }
