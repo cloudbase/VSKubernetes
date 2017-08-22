@@ -20,4 +20,4 @@ $minikubeIp = Exec { $(.\minikube ip) }
 Retry { .\helm.exe list 2>&1 | Out-Null }
 
 $ENV:DRAFT_BASE_DOMAIN="${minikubeIp}.xip.io"
-Exec { .\draft.exe init --yes }
+Exec { .\draft.exe init --auto-accept }
