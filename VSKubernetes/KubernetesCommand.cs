@@ -27,8 +27,8 @@ namespace VSKubernetes
         private static readonly Guid projectTypeNodeJs = new Guid("9092AA53-FB77-4645-B42D-1CCCA6BD08BD");
 
         private static IDictionary<Guid, string> vsProjectTypeToPackNameMap = new Dictionary <Guid, string> {
-            { projectTypeCSharpCore, "dotnetcore" },
-            { projectTypeNodeJs, "node" }
+            { projectTypeCSharpCore, "csharp" },
+            { projectTypeNodeJs, "javascript" }
         };
 
         public const string kubernetesProjectName = "Kubernetes";
