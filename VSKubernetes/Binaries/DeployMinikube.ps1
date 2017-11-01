@@ -19,5 +19,12 @@ $minikubeIp = Exec { $(.\minikube ip) }
 # Wait for tiller to become ready
 Retry { .\helm.exe list 2>&1 | Out-Null }
 
-$ENV:DRAFT_BASE_DOMAIN="${minikubeIp}.nip.io"
 Exec { .\draft.exe init --auto-accept --ingress-enabled }
+
+$patches = @(
+	('[{"op": "replace", "path": "/spec/template/spec/containers/0/args/3", "value": "--basedomain=' + ${minikubeIp} + '.nip.io"}]'),
+	('[{"op": "replace", "path": "/spec/template/spec/containers/0/args/4", "value": "--ingress-enabled=true"}]'))
+
+foreach ($patch in $patches) {
+	Exec { .\kubectl.exe patch deployment/draftd --namespace=kube-system --type='json' "-p=$patch" }
+}
