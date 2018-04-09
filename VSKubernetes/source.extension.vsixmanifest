@@ -1,35 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
-  <Metadata>
-    <Identity Id="VSKubernetes.Cloudbase.2378e1f1-9b22-4a2d-bd20-f22f811b5aeb" Version="1.0" Language="en-US" Publisher="Alessandro Pilotti" />
-    <DisplayName>Cloudbase Kubernetes for Visual Studio 2017</DisplayName>
-    <Description xml:space="preserve">Add Kubernetes to your Visual Studio experience, automating a Minikube deployment and generating Helm Charts for you projects with Draft.
+    <Metadata>
+        <Identity Id="VSKubernetes.Cloudbase.2378e1f1-9b22-4a2d-bd20-f22f811b5aeb" Version="1.0" Language="en-US" Publisher="Alessandro Pilotti" />
+        <DisplayName>Cloudbase Kubernetes for Visual Studio 2017</DisplayName>
+        <Description xml:space="preserve">Add Kubernetes to your Visual Studio experience, automating a Minikube deployment and generating Helm Charts for you projects with Draft.
 Deploy and run your generated Docker containers and Kubernetes manifests locally on Minikube or on Azure ACS, OpenStack and any other cloud!
 
 This project is at its early stages, supporting ASP.NET Core and Node.js projects to begin with. ASP.NET Framework and Windows Server Containers will be added soon!
 
 Kubernetes is a trademark of the The Linux Foundation.</Description>
-    <MoreInfo>https://github.com/cloudbase/VSKubernetes</MoreInfo>
-    <License>LICENSE.txt</License>
-    <Icon>Resources\KubernetesPackage.ico</Icon>
-    <PreviewImage>Resources\preview.png</PreviewImage>
-    <Tags>kubernetes</Tags>
-  </Metadata>
-  <Installation>
-    <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Community" />
-    <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Pro" />
-    <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Enterprise" />
-  </Installation>
-  <Dependencies>
-    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-    <Dependency Id="Microsoft.VisualStudio.MPF.15.0" DisplayName="Visual Studio MPF 15.0" d:Source="Installed" Version="[15.0]" />
-  </Dependencies>
-  <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />
-  </Prerequisites>
-  <Assets>
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|"/>
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="KubernetesProjectTemplate" d:TargetPath="|KubernetesProjectTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
-  </Assets>
+        <MoreInfo>https://github.com/cloudbase/VSKubernetes</MoreInfo>
+        <License>LICENSE.txt</License>
+        <Icon>Resources\KubernetesPackage.ico</Icon>
+        <PreviewImage>Resources\preview.png</PreviewImage>
+        <Tags>kubernetes</Tags>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Community" />
+        <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Pro" />
+        <InstallationTarget Version="[15.0,16.0)" Id="Microsoft.VisualStudio.Enterprise" />
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+        <Dependency Id="Microsoft.VisualStudio.MPF.15.0" DisplayName="Visual Studio MPF 15.0" d:Source="Installed" Version="[15.0]" />
+    </Dependencies>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|"/>
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="KubernetesProjectTemplate" d:TargetPath="|KubernetesProjectTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Newtonsoft.Json.dll" AssemblyName="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
+    </Assets>
 </PackageManifest>

@@ -1,6 +1,7 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Renci.SshNet;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -53,6 +54,25 @@ namespace VSKubernetes
                 if (p.Name == projectName)
                     return true;
             return false;
+        }
+
+        public static string RunSSHCommand(string host, string username, string keyPath, string cmd, int port = 22)
+        {
+            // Workaround for a connection refused error when using localhost
+            if (host == "localhost")
+                host = "127.0.0.1";
+
+            PrivateKeyFile[] keyFiles = { new PrivateKeyFile(keyPath) };
+            using (var client = new SshClient(host, port, username, keyFiles))
+            {
+                // Ignore host key
+                client.HostKeyReceived += (sender, e) => { e.CanTrust = true; };
+                client.Connect();
+                using (var sshCmd = client.CreateCommand(cmd))
+                {
+                    return sshCmd.Execute();
+                }
+            }
         }
 
         public static System.Diagnostics.Process RunProcess(string path, string arguments = "", string workingDirectory = "", bool wait = false,

@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace VSKubernetes
 {
@@ -15,6 +16,7 @@ namespace VSKubernetes
         private const int K8sAddSupportCommandId = 0x0100;
         private const int K8sDeployCommandId = 0x0101;
         private const int K8sDeployMinikubeCommandId = 0x0102;
+        private const int K8sDebugCommandId = 0x0103;
 
         /*
         public static readonly Guid projectTypeCSharp = new Guid("FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
@@ -65,6 +67,11 @@ namespace VSKubernetes
                 menuItem = new OleMenuCommand(this.MenuItemCallbackK8sMinikubeDeploy, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sMinikubeDeploy);
                 commandService.AddCommand(menuItem);
+
+                menuCommandID = new CommandID(Constants.guidCommandSet, K8sDebugCommandId);
+                menuItem = new OleMenuCommand(this.MenuItemCallbackK8sDebug, menuCommandID);
+                menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sDebug);
+                commandService.AddCommand(menuItem);
             }
         }
 
@@ -98,6 +105,15 @@ namespace VSKubernetes
             item.Visible = true;
             item.Enabled = ProjectHasHelmChart(project) && !draftUpRunning && !draftCreateRunning && !minikubeDeploymentRunning;
         }
+
+        private void OnBeforeQueryStatusK8sDebug(object sender, EventArgs e)
+        {
+            OleMenuCommand item = (OleMenuCommand)sender;
+            item.Visible = true;
+            item.Enabled = true;
+            //item.Enabled = !minikubeDeploymentRunning && !draftCreateRunning;
+        }
+
 
         public static KubernetesCommand Instance
         {
@@ -134,21 +150,24 @@ namespace VSKubernetes
             }
         }
 
-        private IVsStatusbar GetStatusBar()
+        private IVsStatusbar GetStatusBar(bool unfreeze = true)
         {
-            return this.ServiceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
+            var bar = this.ServiceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
+            if (unfreeze)
+            {
+                int frozen;
+                bar.IsFrozen(out frozen);
+                if (frozen != 0)
+                {
+                    bar.FreezeOutput(0);
+                }
+            }
+            return bar;
         }
 
         private void MenuItemCallbackK8sMinikubeDeploy(object sender, EventArgs e)
         {
             var bar = GetStatusBar();
-            int frozen;
-            bar.IsFrozen(out frozen);
-
-            if (frozen != 0)
-            {
-                bar.FreezeOutput(0);
-            }
             bar.SetText("Deploying Minikube...");
             bar.FreezeOutput(1);
 
@@ -187,13 +206,6 @@ namespace VSKubernetes
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
 
                 var bar = GetStatusBar();
-                int frozen;
-                bar.IsFrozen(out frozen);
-
-                if (frozen != 0)
-                {
-                    bar.FreezeOutput(0);
-                }
 
                 //object icon = (short)Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Deploy;
                 //bar.Animation(1, ref icon);
@@ -283,6 +295,39 @@ namespace VSKubernetes
             }
             catch (Exception ex)
             {
+                Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
+            }
+        }
+
+        private void MenuItemCallbackK8sDebug(object sender, EventArgs e)
+        {
+            var bar = GetStatusBar();
+            bar.SetText("Connecting to your Kubernetes deployment...");
+            bar.FreezeOutput(1);
+
+            // TODO: check if port is available
+            int port = new Random().Next(10000, 20000);
+            var project = Utils.GetCurrentProject(this.ServiceProvider);
+            var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
+
+            var portMappings = new List<KeyValuePair<int, int>>();
+            portMappings.Add(new KeyValuePair<int, int>(port, 22));
+            // TODO: make configurable
+            portMappings.Add(new KeyValuePair<int, int>(8080, 80));
+
+            var connectProcess = Kubernetes.DraftConnect(projectDir, portMappings, Process_OutputDataReceived, Process_ErrorDataReceived);
+            try
+            {
+                bar.FreezeOutput(0);
+                var dbg = new DotNetCoreDebug(this.ServiceProvider, "localhost", port, () => {
+                    connectProcess.Kill();
+                });
+                dbg.StartDebugging();
+            }
+            catch (Exception ex)
+            {
+                bar.FreezeOutput(0);
+                connectProcess.Kill();
                 Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
             }
         }

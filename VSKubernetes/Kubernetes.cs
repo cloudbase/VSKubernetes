@@ -17,6 +17,24 @@ namespace VSKubernetes
 
         }
 
+        public static Process DraftConnect(string projectDir, IList<KeyValuePair<int, int>> portMappings = null, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
+        {
+            var overridePort = "";
+            if (portMappings != null && portMappings.Count > 0)
+            {
+                foreach (var portMapping in portMappings)
+                {
+                    if (overridePort.Length > 0)
+                        overridePort += ",";
+                    overridePort += portMapping.Key + ":" + portMapping.Value;
+                }
+                overridePort = " --override-port " + overridePort;
+            }
+
+            var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
+            return Utils.RunProcess(draftPath, "connect" + overridePort, projectDir, false, onOutput, onError, onExit);
+        }
+
         public static void DraftUp(string projectDir, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
         {
             var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");

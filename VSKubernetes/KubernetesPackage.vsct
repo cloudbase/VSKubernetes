@@ -20,6 +20,9 @@
   <!--This header contains the command ids for the menus provided by the shell. -->
   <Extern href="vsshlids.h"/>
 
+  <Extern href="VsDebugGuids.h"/>
+  <Extern href="VSDbgCmd.h"/>
+
   <!--The Commands section is where commands, menus, and menu groups are defined.
       This section uses a Guid to identify the package that provides the command defined inside it. -->
   <Commands package="guidK8sCommandPackage">
@@ -41,6 +44,12 @@
       </Group>
       <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup2" priority="0x0100">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+      </Group>
+      <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup4" priority="0x0100">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CSCD_PROJECT_DEBUG"/>
+      </Group>
+      <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup5" priority="0x0100">
+        <Parent guid="guidVSDebugGroup" id="IDM_DEBUG_MENU"/>
       </Group>
       <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup3" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
@@ -75,7 +84,27 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
-          <ButtonText>Deploy to Kubernetes cluster</ButtonText>
+          <ButtonText>Deploy to Kubernetes</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidK8sCommandPackageCmdSet" id="K8sDebugCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup4" />
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Debug in Kubernetes</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidK8sCommandPackageCmdSet" id="K8sDebugCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup5" />
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <ButtonText>Debug in Kubernetes</ButtonText>
         </Strings>
       </Button>
 
@@ -109,9 +138,13 @@
       <IDSymbol name="K8sMenuGroup" value="0x1020" />
       <IDSymbol name="K8sMenuGroup2" value="0x1021" />
       <IDSymbol name="K8sMenuGroup3" value="0x1022" />
+      <IDSymbol name="K8sMenuGroup4" value="0x1023" />
+      <IDSymbol name="K8sMenuGroup5" value="0x1024" />
+
       <IDSymbol name="K8sAddSupportCommandId" value="0x0100" />
       <IDSymbol name="K8sDeployCommandId" value="0x0101" />
       <IDSymbol name="K8sDeployMinikubeCommandId" value="0x0102" />
+      <IDSymbol name="K8sDebugCommandId" value="0x0103" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{83fc7137-67a0-47b5-81a3-398b39c4ffca}" >
