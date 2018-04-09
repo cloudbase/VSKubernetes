@@ -337,7 +337,8 @@ namespace VSKubernetes
             {
                 bar.FreezeOutput(0);
                 var dbg = new DotNetCoreDebug(this.ServiceProvider, "localhost", port, () => {
-                    connectProcess.Kill();
+                    if(!connectProcess.HasExited)
+                        connectProcess.Kill();
                 });
                 dbg.StartDebugging();
             }
