@@ -4,7 +4,7 @@ Import-Module $PSScriptRoot\Utils.psm1
 
 $ENV:HOME = $ENV:USERPROFILE
 
-if (Exec { .\minikube.exe status } | select-string "Running") {
+if (.\minikube.exe status  | select-string "Running") {
     Exec { .\minikube.exe delete }
 }
 
