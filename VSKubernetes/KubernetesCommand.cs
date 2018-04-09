@@ -40,6 +40,7 @@ namespace VSKubernetes
         private volatile bool minikubeDeploymentRunning = false;
         private volatile bool draftCreateRunning = false;
         private volatile bool draftUpRunning = false;
+        private volatile bool draftConnectRunning = false;
 
         private KubernetesCommand(Package package)
         {
@@ -103,15 +104,21 @@ namespace VSKubernetes
             var project = Utils.GetCurrentProject(this.ServiceProvider);
 
             item.Visible = true;
-            item.Enabled = ProjectHasHelmChart(project) && !draftUpRunning && !draftCreateRunning && !minikubeDeploymentRunning;
+            item.Enabled = ProjectHasHelmChart(project) && !draftConnectRunning && !draftUpRunning &&
+                !draftCreateRunning && !minikubeDeploymentRunning;
         }
 
         private void OnBeforeQueryStatusK8sDebug(object sender, EventArgs e)
         {
             OleMenuCommand item = (OleMenuCommand)sender;
+            var project = Utils.GetCurrentProject(this.ServiceProvider);
+
+            // Only CSharpCore is supported for the moment
+            var debugSupported = new Guid(project.Kind) == projectTypeCSharpCore;
+
             item.Visible = true;
-            item.Enabled = true;
-            //item.Enabled = !minikubeDeploymentRunning && !draftCreateRunning;
+            item.Enabled = debugSupported && ProjectHasHelmChart(project) && !draftConnectRunning && !draftUpRunning &&
+                !draftCreateRunning && !minikubeDeploymentRunning;
         }
 
 
@@ -332,20 +339,24 @@ namespace VSKubernetes
             // TODO: make configurable
             portMappings.Add(new KeyValuePair<int, int>(8080, 80));
 
+            draftConnectRunning = true;
             var connectProcess = Kubernetes.DraftConnect(projectDir, portMappings, Process_OutputDataReceived, Process_ErrorDataReceived);
             try
             {
                 bar.FreezeOutput(0);
                 var dbg = new DotNetCoreDebug(this.ServiceProvider, "localhost", port, () => {
-                    if(!connectProcess.HasExited)
+                    if (!connectProcess.HasExited)
                         connectProcess.Kill();
+                    draftConnectRunning = false;
                 });
                 dbg.StartDebugging();
             }
             catch (Exception ex)
             {
                 bar.FreezeOutput(0);
-                connectProcess.Kill();
+                if (!connectProcess.HasExited)
+                    connectProcess.Kill();
+                draftConnectRunning = false;
                 Utils.ShowWarningMessageBox(this.ServiceProvider, ex.Message);
             }
         }
