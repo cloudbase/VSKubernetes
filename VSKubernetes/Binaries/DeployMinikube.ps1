@@ -19,4 +19,6 @@ $minikubeIp = Exec { $(.\minikube ip) }
 # Wait for tiller to become ready
 Retry { .\helm.exe list 2>&1 | Out-Null }
 
-Exec { .\draft.exe init }
+if (-not (Test-Path "~\.draft")) {
+    Exec { .\draft.exe init }
+}
