@@ -29,8 +29,8 @@ namespace VSKubernetes
         private static readonly Guid projectTypeNodeJs = new Guid("9092AA53-FB77-4645-B42D-1CCCA6BD08BD");
 
         private static IDictionary<Guid, string> vsProjectTypeToPackNameMap = new Dictionary <Guid, string> {
-            { projectTypeCSharpCore, "csharp" },
-            { projectTypeNodeJs, "javascript" }
+            { projectTypeCSharpCore, @"github.com\Azure\draft\packs\csharp" },
+            { projectTypeNodeJs, @"github.com\Azure\draft\packs\javascript" }
         };
 
         public const string kubernetesProjectName = "Kubernetes";
@@ -77,7 +77,7 @@ namespace VSKubernetes
 
         private bool ProjectHasHelmChart(Project project)
         {
-            var item = Utils.GetProjectItem(project, "chart");
+            var item = Utils.GetProjectItem(project, "charts");
             return (item != null && VSConstants.GUID_ItemType_PhysicalFolder == new Guid(item.Kind));
         }
 
@@ -281,7 +281,7 @@ namespace VSKubernetes
                             {
                                 Kubernetes.DisableDraftWatch(projectDir);
                                 var paths = new List<string>();
-                                foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "chart" })
+                                foreach (var name in new[] { "Dockerfile", "draft.toml", ".draftignore", "charts" })
                                     paths.Add(System.IO.Path.Combine(projectDir, name));
                                 Utils.AddItemsToProject(project.ProjectItems, paths);
                             }
