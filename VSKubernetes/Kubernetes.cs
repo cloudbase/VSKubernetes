@@ -9,12 +9,17 @@ namespace VSKubernetes
 {
     class Kubernetes
     {
+        public static Process RunPowerShellProcess(string path, string workingDirectory, bool wait = false, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
+        {
+            return Utils.RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", path),
+                                    workingDirectory, wait, onOutput, onError, onExit);
+        }
+
         public static void DeployMinikube(DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
         {
             var baseDir = Utils.GetBinariesDir();
             var ps1Path = System.IO.Path.Combine(baseDir, "DeployMinikube.ps1");
-            Utils.RunProcess("powershell.exe", string.Format("-NonInteractive -NoLogo -ExecutionPolicy RemoteSigned -File \"{0}\"", ps1Path), baseDir, false, onOutput, onError, onExit);
-
+            RunPowerShellProcess(ps1Path, baseDir, false, onOutput, onError, onExit);
         }
 
         public static Process DraftConnect(string projectDir, IList<KeyValuePair<int, int>> portMappings = null, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
@@ -35,10 +40,18 @@ namespace VSKubernetes
             return Utils.RunProcess(draftPath, "connect" + overridePort, projectDir, false, onOutput, onError, onExit);
         }
 
-        public static void DraftUp(string projectDir, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
+        public static void DraftUp(string projectDir, bool minikubeDockerEnv=false, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
         {
-            var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
-            Utils.RunProcess(draftPath, "up .", projectDir, false, onOutput, onError, onExit);
+            if (minikubeDockerEnv)
+            {
+                var draftPs1Path = System.IO.Path.Combine(Utils.GetBinariesDir(), "draftUp.ps1");
+                RunPowerShellProcess(draftPs1Path, projectDir, false, onOutput, onError, onExit);
+            }
+            else
+            {
+                var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
+                Utils.RunProcess(draftPath, "up .", projectDir, false, onOutput, onError, onExit);
+            }
         }
 
         public static void DraftCreate(string projectDir, string packName, string appName, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)

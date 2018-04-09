@@ -204,6 +204,7 @@ namespace VSKubernetes
             {
                 var project = Utils.GetCurrentProject(this.ServiceProvider);
                 var projectDir = System.IO.Path.GetDirectoryName(project.FullName);
+                var minikubeDockerEnv = true;
 
                 var bar = GetStatusBar();
 
@@ -224,7 +225,7 @@ namespace VSKubernetes
 
                 draftCreateRunning = true;
 
-                Kubernetes.DraftUp(projectDir, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
+                Kubernetes.DraftUp(projectDir, minikubeDockerEnv, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
