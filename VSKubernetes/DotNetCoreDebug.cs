@@ -77,7 +77,7 @@ namespace VSKubernetes
             dynamic options = new ExpandoObject();
             (options as IDictionary<string, Object>)["$adapter"] = sshPath;
             (options as IDictionary<string, Object>)["$adapterArgs"] = string.Format(
-                "{0}@{1} -o PasswordAuthentication=no -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {2} -i {3} " +
+                "{0}@{1} -o PasswordAuthentication=no -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {2} -i \"{3}\" " +
                 "/root/vsdbg/vsdbg --interpreter=vscode",
                 sshUsername, sshHost, sshPort, sshKeyPath);
             var languageMappings = new ExpandoObject();
