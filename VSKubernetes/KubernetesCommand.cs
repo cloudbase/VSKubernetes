@@ -212,6 +212,16 @@ namespace VSKubernetes
                 bar.SetText("Deploying Kubernetes Helm Chart...");
                 bar.FreezeOutput(1);
 
+                if (new Guid(project.Kind) == projectTypeCSharpCore)
+                {
+                    // TODO: add abstraction :)
+                    Utils.WriteToOutputWindow(this.ServiceProvider, "Generating SSH key...");
+                    var sshKeyPath = System.IO.Path.Combine(projectDir, "id_rsa_vscode");
+                    Utils.GenerateSSHKeypair(sshKeyPath, Process_OutputDataReceived, Process_ErrorDataReceived);
+                }
+
+                Utils.WriteToOutputWindow(this.ServiceProvider, "Starting draft up...");
+
                 draftCreateRunning = true;
 
                 Kubernetes.DraftUp(projectDir, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
@@ -246,6 +256,11 @@ namespace VSKubernetes
             }
         }
 
+        private string NormalizeAppName(string name)
+        {
+            return name.Replace(" ", "_").ToLower();
+        }
+
         private void MenuItemCallbackK8sAddSupport(object sender, EventArgs e)
         {
             try
@@ -260,9 +275,10 @@ namespace VSKubernetes
                     throw new Exception("Unsupported project type. Only ASP.NET Core and Node.js projects are currently supported for now, more will be added soon!");
                 }
 
+                var appName = NormalizeAppName(project.Name);
                 draftUpRunning = true;
 
-                Kubernetes.DraftCreate(projectDir, packName, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
+                Kubernetes.DraftCreate(projectDir, packName, appName, Process_OutputDataReceived, Process_ErrorDataReceived, (s, e2) => {
                     ThreadHelper.JoinableTaskFactory.Run(async delegate {
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 

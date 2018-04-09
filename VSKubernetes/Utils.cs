@@ -5,6 +5,7 @@ using Renci.SshNet;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace VSKubernetes
 {
@@ -54,6 +55,29 @@ namespace VSKubernetes
                 if (p.Name == projectName)
                     return true;
             return false;
+        }
+
+        public static string GetSSHBinariesDir()
+        {
+            // Using the SSH client available at https://github.com/PowerShell/Win32-OpenSSH causes an E_ABORT error
+            // Temporarily using the one that comes with Git until the issue is solved
+            return Environment.ExpandEnvironmentVariables("%SystemDrive%\\Program Files\\Git\\usr\\bin\\");
+        }
+
+        public static void GenerateSSHKeypair(string keyPath, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null)
+        {
+            // ssh-keygen has no way to disable the overwrite prompt
+            if (System.IO.File.Exists(keyPath))
+                System.IO.File.Delete(keyPath);
+            var pubKeyPath = keyPath + ".pub";
+            if (System.IO.File.Exists(pubKeyPath))
+                System.IO.File.Delete(pubKeyPath);
+
+            var sshKeygenPath = Path.Combine(GetSSHBinariesDir(), "ssh-keygen.exe");
+            var p = RunProcess(sshKeygenPath, string.Format("-t rsa -b 2048 -q -N \"\" -f \"{0}\"", keyPath), wait: true,
+                               onOutput: onOutput, onError: onError);
+            if (p.ExitCode != 0)
+                throw new Exception("ssh-keygen failed");
         }
 
         public static string RunSSHCommand(string host, string username, string keyPath, string cmd, int port = 22)

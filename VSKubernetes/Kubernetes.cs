@@ -41,10 +41,10 @@ namespace VSKubernetes
             Utils.RunProcess(draftPath, "up .", projectDir, false, onOutput, onError, onExit);
         }
 
-        public static void DraftCreate(string projectDir, string packName, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
+        public static void DraftCreate(string projectDir, string packName, string appName, DataReceivedEventHandler onOutput = null, DataReceivedEventHandler onError = null, EventHandler onExit = null)
         {
             var draftPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "draft.exe");
-            Utils.RunProcess(draftPath, String.Format("create . --pack {0}", packName), projectDir, false, onOutput, onError, onExit);
+            Utils.RunProcess(draftPath, String.Format("create . --pack {0} --app {1}", packName, appName), projectDir, false, onOutput, onError, onExit);
         }
 
         public static void DisableDraftWatch(string projectDir)
