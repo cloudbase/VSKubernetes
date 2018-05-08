@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using YamlDotNet.RepresentationModel;
 
 namespace VSKubernetes
 {
@@ -69,5 +70,63 @@ namespace VSKubernetes
             System.IO.File.WriteAllText(path, text, System.Text.Encoding.ASCII);
         }
 
+
+        static string GetK8sConfigPath()
+        {
+            var home = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+            return System.IO.Path.Combine(home, @".kube\config");
+        }
+
+        static YamlStream LoadKubeConfig()
+        {
+            var k8sConfigPath = GetK8sConfigPath();
+            if (!System.IO.File.Exists(k8sConfigPath))
+                return null;
+
+            using (var r = System.IO.File.OpenText(k8sConfigPath))
+            {
+                var yaml = new YamlStream();
+                yaml.Load(r);
+                return yaml;
+            }
+        }
+
+        public static string GetCurrentContext()
+        {
+            var yaml = LoadKubeConfig();
+            if (yaml == null)
+                return null;
+
+            var mapping = (YamlMappingNode)yaml.Documents[0].RootNode;
+            return ((YamlScalarNode)mapping["current-context"]).Value;
+        }
+
+        public static void SetCurrentContext(string context)
+        {
+            var kubectlPath = System.IO.Path.Combine(Utils.GetBinariesDir(), "kubectl.exe");
+            var p = Utils.RunProcess(kubectlPath, "config use-context \""  + context + "\"", "", true);
+            if (p.ExitCode != 0)
+            {
+                throw new Exception("kubectl set-context failed");
+            }
+        }
+
+        public static string[] GetContextNames()
+        {
+            IList<string> l = new List<string>();
+
+            var yaml = LoadKubeConfig();
+            if (yaml != null)
+            {
+                var mapping = (YamlMappingNode)yaml.Documents[0].RootNode;
+                var contexts = (YamlSequenceNode)mapping.Children[new YamlScalarNode("contexts")];
+                foreach (YamlMappingNode context in contexts)
+                {
+                    l.Add(context["name"].ToString());
+                }
+            }
+
+            return l.ToArray();
+        }
     }
 }

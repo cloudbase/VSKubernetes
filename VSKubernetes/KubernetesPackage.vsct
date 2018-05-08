@@ -34,6 +34,33 @@
     group; your package should define its own command set in order to avoid collisions
     with command ids defined by other packages. -->
 
+    <Menus>
+      <!--In this section you can define new menus. A menu in VS is the generic way of
+      refering to both menus (all types, including context menus and MenuControllers)
+      and toolbars (both toolwindow and top-level). A menu is a container for groups. -->
+      <Menu guid="guidComboBoxCmdSet" id="MyToolbar" priority="0x0000" type="Toolbar">
+        <Strings>
+          <ButtonText>Kubernetes</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+
+    <Combos>
+      <Combo guid="guidComboBoxCmdSet" id="cmdidMyDropDownCombo" priority="0x0010" type="DropDownCombo" defaultWidth="70" idCommandList="cmdidMyDropDownComboGetList">
+        <Parent guid="guidComboBoxCmdSet" id="MyToolbarGroup"/>
+        <CommandFlag>IconAndText</CommandFlag>
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <MenuText>Kubernetes Context: </MenuText>
+          <ButtonText>Kubernetes Context: </ButtonText>
+          <ToolTipText>Select Context</ToolTipText>
+          <CanonicalName>Kubernetes Context</CanonicalName>
+          <LocCanonicalName>Kubernetes Context</LocCanonicalName>
+          <CommandName>Kubernetes Context</CommandName>
+        </Strings>
+      </Combo>
+    </Combos>
+
     <!-- In this section you can define new menu groups. A menu group is a container for
          other menus or buttons (commands); from a visual point of view you can see the
          group as the part of a menu contained between two lines. The parent of a group
@@ -52,6 +79,10 @@
         <Parent guid="guidVSDebugGroup" id="IDM_DEBUG_MENU"/>
       </Group>
       <Group guid="guidK8sCommandPackageCmdSet" id="K8sMenuGroup3" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+
+      <Group guid="guidComboBoxCmdSet" id="MyToolbarGroup" priority="0xFF45">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
       </Group>
     </Groups>
@@ -129,9 +160,23 @@
     </Bitmaps>
   </Commands>
 
+  <CommandPlacements>
+    <!-- Place our group (MyToolbarGroup) onto our toolbar (MyToolbar)-->
+    <CommandPlacement guid="guidComboBoxCmdSet" id="MyToolbarGroup" priority="0x0100">
+      <Parent guid="guidComboBoxCmdSet" id="MyToolbar"/>
+    </CommandPlacement>
+  </CommandPlacements>
+
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidK8sCommandPackage" value="{6f5f21e1-9361-4723-95a9-6e01ddf5c4bc}" />
+
+   <GuidSymbol name="guidComboBoxCmdSet" value="{B2C8E135-0E7A-4696-963E-BD3280F8578C}">
+      <IDSymbol name="MyToolbar" value="0x1000"/>
+      <IDSymbol name="MyToolbarGroup" value="0x1030"/>
+      <IDSymbol name="cmdidMyDropDownCombo" value="0x101"/>
+      <IDSymbol name="cmdidMyDropDownComboGetList" value="0x102"/>
+    </GuidSymbol>
 
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidK8sCommandPackageCmdSet" value="{1ebe970b-154e-45ac-b92e-9083d5b0c87b}">

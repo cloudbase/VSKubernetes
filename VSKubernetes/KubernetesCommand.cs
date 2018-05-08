@@ -17,6 +17,8 @@ namespace VSKubernetes
         private const int K8sDeployCommandId = 0x0101;
         private const int K8sDeployMinikubeCommandId = 0x0102;
         private const int K8sDebugCommandId = 0x0103;
+        private const uint cmdidMyDropDownCombo = 0x101;
+        private const uint cmdidMyDropDownComboGetList = 0x102;
 
         /*
         public static readonly Guid projectTypeCSharp = new Guid("FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
@@ -41,6 +43,8 @@ namespace VSKubernetes
         private volatile bool draftCreateRunning = false;
         private volatile bool draftUpRunning = false;
         private volatile bool draftConnectRunning = false;
+
+        private string currentKubernetesContext = null;
 
         private KubernetesCommand(Package package)
         {
@@ -73,6 +77,93 @@ namespace VSKubernetes
                 menuItem = new OleMenuCommand(this.MenuItemCallbackK8sDebug, menuCommandID);
                 menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatusK8sDebug);
                 commandService.AddCommand(menuItem);
+
+                CommandID menuMyDropDownComboCommandID = new CommandID(Constants.guidComboBoxCmdSet, (int)cmdidMyDropDownCombo);
+                OleMenuCommand menuMyDropDownComboCommand = new OleMenuCommand(new EventHandler(OnMenuMyDropDownCombo), menuMyDropDownComboCommandID);
+                commandService.AddCommand(menuMyDropDownComboCommand);
+
+                CommandID menuMyDropDownComboGetListCommandID = new CommandID(Constants.guidComboBoxCmdSet, (int)cmdidMyDropDownComboGetList);
+                MenuCommand menuMyDropDownComboGetListCommand = new OleMenuCommand(new EventHandler(OnMenuMyDropDownComboGetList), menuMyDropDownComboGetListCommandID);
+                commandService.AddCommand(menuMyDropDownComboGetListCommand);
+            }
+        }
+
+        private void OnMenuMyDropDownComboGetList(object sender, EventArgs e)
+        {
+            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+
+            if (eventArgs != null)
+            {
+                object inParam = eventArgs.InValue;
+                IntPtr vOut = eventArgs.OutValue;
+
+                if (inParam != null)
+                {
+                    throw (new ArgumentException());
+                }
+                else if (vOut != IntPtr.Zero)
+                {
+                    var contextNames = Kubernetes.GetContextNames();
+                    Marshal.GetNativeVariantForObject(contextNames, vOut);
+                }
+                else
+                {
+                    throw (new ArgumentException());
+                }
+            }
+        }
+
+        private void OnMenuMyDropDownCombo(object sender, EventArgs e)
+        {
+            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+
+            if (eventArgs != null)
+            {
+                string newChoice = eventArgs.InValue as string;
+                IntPtr vOut = eventArgs.OutValue;
+
+                if (vOut != IntPtr.Zero)
+                {
+                    if(currentKubernetesContext == null)
+                        currentKubernetesContext = Kubernetes.GetCurrentContext();
+
+                    // when vOut is non-NULL, the IDE is requesting the current value for the combo
+                    Marshal.GetNativeVariantForObject(currentKubernetesContext, vOut);
+                }
+
+                else if (newChoice != null)
+                {
+                    var contextNames = Kubernetes.GetContextNames();
+
+                    // new value was selected or typed in
+                    // see if it is one of our items
+                    bool validInput = false;
+                    int indexInput = -1;
+                    for (indexInput = 0; indexInput < contextNames.Length; indexInput++)
+                    {
+                        if (string.Compare(contextNames[indexInput], newChoice, StringComparison.CurrentCultureIgnoreCase) == 0)
+                        {
+                            validInput = true;
+                            break;
+                        }
+                    }
+
+                    if (validInput)
+                    {
+                        var newCurrentContext = contextNames[indexInput];
+                        Kubernetes.SetCurrentContext(newCurrentContext);
+                        currentKubernetesContext = newCurrentContext;
+                    }
+                    else
+                    {
+                        throw (new ArgumentException()); // force an exception to be thrown
+                    }
+                }
+            }
+            else
+            {
+                // We should never get here; EventArgs are required.
+                throw (new ArgumentException()); // force an exception to be thrown
             }
         }
 

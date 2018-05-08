@@ -12,5 +12,8 @@ namespace VSKubernetes
         public const string projectExtension = "k8sproj";
         public const string uniqueCapability = "Kubernetes";
         public const string projectLanguage = "Yaml";
+
+        public const string guidComboBoxCmdSetString = "B2C8E135-0E7A-4696-963E-BD3280F8578C";
+        public static readonly Guid guidComboBoxCmdSet = new Guid(guidComboBoxCmdSetString);
     }
 }
